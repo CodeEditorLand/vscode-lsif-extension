@@ -1,17 +1,34 @@
 {
 	"name": "vscode-lsif-client",
-	"description": "VSCode Language Server Index Format client",
-	"author": "Microsoft Corporation",
-	"license": "MIT",
 	"version": "0.0.1",
-	"publisher": "vscode",
-	"engines": {
-		"vscode": "1.86.0"
+	"private": false,
+	"description": "VSCode Language Server Index Format client",
+	"homepage": "https://github.com/CodeEditorLand/Foundation#readme",
+	"bugs": {
+		"url": "https://github.com/CodeEditorLand/Foundation/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CodeEditorLand/Foundation.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "Playform",
+		"email": "Hello@Playform.Cloud",
+		"url": "https://playform.cloud"
+	},
+	"type": "module",
+	"scripts": {
+		"prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'"
 	},
 	"dependencies": {
 		"vscode-languageclient": "9.0.1"
 	},
 	"devDependencies": {
-		"@types/vscode": "1.87.0"
+		"@types/vscode": "1.87.0",
+		"typescript-esbuild": "latest"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

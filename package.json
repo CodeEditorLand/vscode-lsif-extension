@@ -1,32 +1,32 @@
 {
 	"name": "lsif-browser",
+	"version": "0.0.1",
+	"private": false,
 	"description": "Extension to browse LSIF databases",
-	"author": "Microsoft Corporation",
-	"publisher": "ms-vscode",
-	"license": "MIT",
-	"version": "0.6.0",
+	"homepage": "https://github.com/CodeEditorLand/Foundation#readme",
+	"bugs": {
+		"url": "https://github.com/CodeEditorLand/Foundation/issues"
+	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/Microsoft/vscode-lsif-extension.git"
+		"url": "git+https://github.com/CodeEditorLand/Foundation.git"
 	},
-	"bugs": {
-		"url": "https://github.com/Microsoft/vscode-lsif-extension/issues"
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "Playform",
+		"email": "Hello@Playform.Cloud",
+		"url": "https://playform.cloud"
 	},
-	"categories": [],
-	"keywords": [
-		"multi-root ready"
-	],
-	"engines": {
-		"vscode": "1.86.0"
-	},
-	"activationEvents": [
-		"onFileSystem:lsif",
-		"onCommand:lsif.openDatabase"
-	],
-	"enabledApiProposals": [
-		"documentFiltersExclusive"
-	],
+	"type": "module",
 	"main": "./client/out/extension",
+	"scripts": {
+		"clean": "tsc -b --clean",
+		"compile": "tsc -b",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'",
+		"vscode:prepublish": "npm run compile",
+		"watch": "tsc -b -w"
+	},
 	"contributes": {
 		"commands": [
 			{
@@ -35,35 +35,36 @@
 			}
 		],
 		"configuration": {
-			"type": "object",
-			"title": "Index Format configuration",
 			"properties": {
 				"lsif.trace.server": {
-					"scope": "window",
-					"type": "string",
+					"default": "off",
+					"description": "Traces the communication between VS Code and the language server.",
 					"enum": [
 						"off",
 						"messages",
 						"verbose"
 					],
-					"default": "off",
-					"description": "Traces the communication between VS Code and the language server."
+					"scope": "window",
+					"type": "string"
 				}
-			}
+			},
+			"title": "Index Format configuration",
+			"type": "object"
 		}
 	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"clean": "tsc -b --clean",
-		"compile": "tsc -b",
-		"watch": "tsc -b -w",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
-	},
+	"activationEvents": [
+		"onFileSystem:lsif",
+		"onCommand:lsif.openDatabase"
+	],
 	"devDependencies": {
 		"@types/node": "20.11.30",
-		"@typescript-eslint/eslint-plugin": "7.3.1",
-		"@typescript-eslint/parser": "7.3.1",
-		"eslint": "8.57.0",
-		"typescript": "5.4.2"
-	}
+		"typescript": "5.4.2",
+		"typescript-esbuild": "latest"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"enabledApiProposals": [
+		"documentFiltersExclusive"
+	]
 }
