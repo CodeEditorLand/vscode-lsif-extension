@@ -1,32 +1,8 @@
 {
-	"name": "lsif-browser",
-	"version": "0.0.1",
-	"private": false,
-	"description": "Extension to browse LSIF databases",
-	"homepage": "https://github.com/CodeEditorLand/Foundation#readme",
-	"bugs": {
-		"url": "https://github.com/CodeEditorLand/Foundation/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/CodeEditorLand/Foundation.git"
-	},
-	"license": "SEE LICENSE IN LICENSE",
-	"author": {
-		"name": "Playform",
-		"email": "Hello@Playform.Cloud",
-		"url": "https://playform.cloud"
-	},
-	"type": "module",
-	"main": "./client/out/extension",
-	"scripts": {
-		"clean": "tsc -b --clean",
-		"compile": "tsc -b",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-		"prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'",
-		"vscode:prepublish": "npm run compile",
-		"watch": "tsc -b -w"
-	},
+	"activationEvents": [
+		"onFileSystem:lsif",
+		"onCommand:lsif.openDatabase"
+	],
 	"contributes": {
 		"commands": [
 			{
@@ -52,19 +28,24 @@
 			"type": "object"
 		}
 	},
-	"activationEvents": [
-		"onFileSystem:lsif",
-		"onCommand:lsif.openDatabase"
-	],
+	"description": "Extension to browse LSIF databases",
 	"devDependencies": {
 		"@types/node": "20.11.30",
 		"typescript": "5.4.2",
 		"typescript-esbuild": "0.4.5"
 	},
-	"publishConfig": {
-		"access": "public"
-	},
 	"enabledApiProposals": [
 		"documentFiltersExclusive"
-	]
+	],
+	"main": "./client/out/extension",
+	"name": "lsif-browser",
+	"scripts": {
+		"clean": "tsc -b --clean",
+		"compile": "tsc -b",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'",
+		"vscode:prepublish": "npm run compile",
+		"watch": "tsc -b -w"
+	},
+	"type": "module"
 }
