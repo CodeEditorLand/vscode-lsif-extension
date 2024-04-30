@@ -1,23 +1,42 @@
 {
 	"name": "lsif-server",
+	"version": "0.0.1",
+	"private": false,
 	"description": "Generic Language Server Index Format Server",
-	"author": "Microsoft Corporation",
-	"license": "MIT",
-	"version": "0.1.0",
-	"engines": {
-		"node": "*"
+	"keywords": [
+		"land"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/LandLsifExtension#readme",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/LandLsifExtension/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/LandLsifExtension.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🌆 — Land —",
+		"email": "Land@PlayForm.Cloud",
+		"url": "HTTPS://Land.PlayForm.Cloud"
+	},
+	"type": "module",
+	"scripts": {
+		"Document": "Document 'Source/**/*.ts'",
+		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"dependencies": {
 		"better-sqlite3": "^9.4.1",
 		"lsif-protocol": "0.6.0-next.7",
-		"semver": "^7.6.0",
-		"vscode-languageserver": "^9.0.1",
-		"vscode-uri": "^3.0.8"
+		"semver": "^7.6.0"
 	},
 	"devDependencies": {
+		"@playform/build": "0.0.7",
+		"@playform/document": "0.0.6",
 		"@types/better-sqlite3": "^7.6.9",
-		"@types/semver": "^7.5.7",
-		"electron-rebuild": "^3.2.9"
+		"@types/semver": "^7.5.7"
 	},
-	"scripts": {}
+	"publishConfig": {
+		"access": "public"
+	}
 }
