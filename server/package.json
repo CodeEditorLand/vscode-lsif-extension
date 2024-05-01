@@ -26,15 +26,15 @@
 		"prepublishOnly": "Build 'Source/**/*.ts'"
 	},
 	"dependencies": {
-		"better-sqlite3": "^9.4.1",
+		"better-sqlite3": "9.6.0",
 		"lsif-protocol": "0.6.0-next.7",
-		"semver": "^7.6.0"
+		"semver": "7.6.0"
 	},
 	"devDependencies": {
 		"@playform/build": "0.0.7",
 		"@playform/document": "0.0.6",
-		"@types/better-sqlite3": "^7.6.9",
-		"@types/semver": "^7.5.7"
+		"@types/better-sqlite3": "7.6.10",
+		"@types/semver": "7.5.8"
 	},
 	"publishConfig": {
 		"access": "public"
