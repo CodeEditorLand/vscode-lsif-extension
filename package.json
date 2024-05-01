@@ -1,32 +1,15 @@
 {
-	"name": "lsif-browser",
-	"version": "0.0.1",
-	"private": false,
-	"description": "Extension to browse LSIF databases",
-	"keywords": [
-		"land"
+	"activationEvents": [
+		"onFileSystem:lsif",
+		"onCommand:lsif.openDatabase"
 	],
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/LandLsifExtension#readme",
-	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/LandLsifExtension/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+HTTPS://github.com/CodeEditorLand/LandLsifExtension.git"
-	},
-	"license": "SEE LICENSE IN LICENSE",
 	"author": {
-		"name": "🌆 — Land —",
 		"email": "Land@PlayForm.Cloud",
+		"name": "🌆 — Land —",
 		"url": "HTTPS://Land.PlayForm.Cloud"
 	},
-	"type": "module",
-	"main": "./client/out/extension",
-	"scripts": {
-		"Document": "Document 'Source/**/*.ts'",
-		"clean": "tsc -b --clean",
-		"compile": "tsc -b",
-		"prepublishOnly": "Build 'Source/**/*.ts'"
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/LandLsifExtension/issues"
 	},
 	"contributes": {
 		"commands": [
@@ -53,19 +36,36 @@
 			"type": "object"
 		}
 	},
-	"activationEvents": [
-		"onFileSystem:lsif",
-		"onCommand:lsif.openDatabase"
-	],
+	"description": "Extension to browse LSIF databases",
 	"devDependencies": {
 		"@playform/build": "0.0.7",
 		"@playform/document": "0.0.6",
 		"@types/node": "20.12.7"
 	},
+	"enabledApiProposals": [
+		"documentFiltersExclusive"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/LandLsifExtension#readme",
+	"keywords": [
+		"land"
+	],
+	"license": "SEE LICENSE IN LICENSE",
+	"main": "./client/out/extension",
+	"name": "lsif-browser",
+	"private": false,
 	"publishConfig": {
 		"access": "public"
 	},
-	"enabledApiProposals": [
-		"documentFiltersExclusive"
-	]
+	"repository": {
+		"type": "git",
+		"url": "git+HTTPS://github.com/CodeEditorLand/LandLsifExtension.git"
+	},
+	"scripts": {
+		"Document": "Document 'Source/**/*.ts'",
+		"clean": "tsc -b --clean",
+		"compile": "tsc -b",
+		"prepublishOnly": "Build 'Source/**/*.ts'"
+	},
+	"type": "module",
+	"version": "0.0.1"
 }
