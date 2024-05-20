@@ -1,12 +1,17 @@
 {
 	"name": "vscode-lsif-client",
 	"description": "VSCode Language Server Index Format client",
-	"scripts": {
-		"Document": "Document 'Source/**/*.ts'",
-		"prepublishOnly": "Build 'Source/**/*.ts'"
+	"author": "Microsoft Corporation",
+	"license": "MIT",
+	"version": "0.0.1",
+	"publisher": "vscode",
+	"engines": {
+		"vscode": "^1.86.0"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"vscode-languageclient": "^9.0.1"
+	},
 	"devDependencies": {
-		"@playform/build": "0.0.7"
+		"@types/vscode": "1.86.0"
 	}
 }
