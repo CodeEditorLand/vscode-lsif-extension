@@ -3,12 +3,12 @@
 	"description": "Generic Language Server Index Format Server",
 	"scripts": {},
 	"dependencies": {
-		"better-sqlite3": "^11.0.0",
+		"better-sqlite3": "11.0.0",
 		"lsif-protocol": "0.6.0-next.7",
-		"semver": "^7.6.2"
+		"semver": "7.6.2"
 	},
 	"devDependencies": {
-		"@types/better-sqlite3": "^7.6.10",
-		"@types/semver": "^7.5.8"
+		"@types/better-sqlite3": "7.6.10",
+		"@types/semver": "7.5.8"
 	}
 }
