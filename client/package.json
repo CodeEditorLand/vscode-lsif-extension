@@ -1,6 +1,0 @@
-{
-	"name": "vscode-lsif-client",
-	"description": "VSCode Language Server Index Format client",
-	"dependencies": {},
-	"devDependencies": {}
-}
