@@ -30,7 +30,7 @@
 	},
 	"description": "Extension to browse LSIF databases",
 	"devDependencies": {
-		"@types/node": "22.1.0"
+		"@types/node": "22.4.0"
 	},
 	"enabledApiProposals": [
 		"documentFiltersExclusive"
