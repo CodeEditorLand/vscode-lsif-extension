@@ -1,32 +1,8 @@
 {
-	"name": "lsif-browser",
-	"description": "Extension to browse LSIF databases",
-	"author": "Microsoft Corporation",
-	"publisher": "ms-vscode",
-	"license": "MIT",
-	"version": "0.6.0",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/Microsoft/vscode-lsif-extension.git"
-	},
-	"bugs": {
-		"url": "https://github.com/Microsoft/vscode-lsif-extension/issues"
-	},
-	"categories": [],
-	"keywords": [
-		"multi-root ready"
-	],
-	"engines": {
-		"vscode": "^1.86.0"
-	},
 	"activationEvents": [
 		"onFileSystem:lsif",
 		"onCommand:lsif.openDatabase"
 	],
-	"enabledApiProposals": [
-		"documentFiltersExclusive"
-	],
-	"main": "./client/out/extension",
 	"contributes": {
 		"commands": [
 			{
@@ -35,35 +11,34 @@
 			}
 		],
 		"configuration": {
-			"type": "object",
-			"title": "Index Format configuration",
 			"properties": {
 				"lsif.trace.server": {
-					"scope": "window",
-					"type": "string",
+					"default": "off",
+					"description": "Traces the communication between VS Code and the language server.",
 					"enum": [
 						"off",
 						"messages",
 						"verbose"
 					],
-					"default": "off",
-					"description": "Traces the communication between VS Code and the language server."
+					"scope": "window",
+					"type": "string"
 				}
-			}
+			},
+			"title": "Index Format configuration",
+			"type": "object"
 		}
 	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"clean": "tsc -b --clean",
-		"compile": "tsc -b",
-		"watch": "tsc -b -w",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
-	},
+	"description": "Extension to browse LSIF databases",
 	"devDependencies": {
-		"@types/node": "^18.14.6",
-		"@typescript-eslint/eslint-plugin": "^7.0.1",
-		"@typescript-eslint/parser": "^7.0.1",
-		"eslint": "^8.56.0",
-		"typescript": "^4.9.5"
+		"@types/node": "^18.14.6"
+	},
+	"enabledApiProposals": [
+		"documentFiltersExclusive"
+	],
+	"main": "./client/out/extension",
+	"name": "lsif-browser",
+	"scripts": {
+		"clean": "tsc -b --clean",
+		"compile": "tsc -b"
 	}
 }
