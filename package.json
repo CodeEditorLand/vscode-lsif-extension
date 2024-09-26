@@ -36,7 +36,7 @@
 		"onCommand:lsif.openDatabase"
 	],
 	"devDependencies": {
-		"@types/node": "22.6.0"
+		"@types/node": "22.7.2"
 	},
 	"enabledApiProposals": [
 		"documentFiltersExclusive"
