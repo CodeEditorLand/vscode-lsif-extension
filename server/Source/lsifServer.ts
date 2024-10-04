@@ -3,28 +3,42 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-import { promisify } from 'util';
-import * as path from 'path';
-import * as fs from 'fs';
-
-import { URI  } from 'vscode-uri';
+import * as fs from "fs";
+import * as path from "path";
+import { promisify } from "util";
 import {
-	createConnection, ProposedFeatures, InitializeParams, TextDocumentSyncKind, WorkspaceFolder,
-	BulkUnregistration, BulkRegistration, DocumentSymbolRequest, DocumentSelector, FoldingRangeRequest,
-	HoverRequest, DefinitionRequest, ReferencesRequest, RequestType, DeclarationRequest, DocumentFilter
-} from 'vscode-languageserver/node';
+	BulkRegistration,
+	BulkUnregistration,
+	createConnection,
+	DeclarationRequest,
+	DefinitionRequest,
+	DocumentFilter,
+	DocumentSelector,
+	DocumentSymbolRequest,
+	FoldingRangeRequest,
+	HoverRequest,
+	InitializeParams,
+	ProposedFeatures,
+	ReferencesRequest,
+	RequestType,
+	TextDocumentSyncKind,
+	WorkspaceFolder,
+} from "vscode-languageserver/node";
+import { URI } from "vscode-uri";
 
-import { Database, UriTransformer } from './database';
-import { FileType, FileStat } from './files';
+import { Database, UriTransformer } from "./database";
+import { FileStat, FileType } from "./files";
 
-const LSIF_SCHEME = 'lsif';
+const LSIF_SCHEME = "lsif";
 
 interface StatFileParams {
 	uri: string;
 }
 
 namespace StatFileRequest {
-	export const type = new RequestType<StatFileParams, FileStat | null, void>('lsif/statFile');
+	export const type = new RequestType<StatFileParams, FileStat | null, void>(
+		"lsif/statFile",
+	);
 }
 
 interface ReadFileParams {
@@ -32,7 +46,9 @@ interface ReadFileParams {
 }
 
 namespace ReadFileRequest {
-	export const type = new RequestType<ReadFileParams, string | null, void>('lsif/readfile');
+	export const type = new RequestType<ReadFileParams, string | null, void>(
+		"lsif/readfile",
+	);
 }
 
 interface ReadDirectoryParams {
@@ -40,13 +56,16 @@ interface ReadDirectoryParams {
 }
 
 namespace ReadDirectoryRequest {
-	export const type = new RequestType<ReadDirectoryParams, [string, FileType][], void>('lsif/readDirectory');
+	export const type = new RequestType<
+		ReadDirectoryParams,
+		[string, FileType][],
+		void
+	>("lsif/readDirectory");
 }
 
 let connection = createConnection(ProposedFeatures.all);
 
 class Transformer implements UriTransformer {
-
 	private lsif: string;
 	private workspaceRoot: string;
 
@@ -61,8 +80,10 @@ class Transformer implements UriTransformer {
 		} else {
 			let parsed = URI.parse(uri);
 			if (parsed.scheme === LSIF_SCHEME && parsed.query) {
-				return parsed.with( { scheme: 'file', query: '' } ).toString(true);
-			} else  {
+				return parsed
+					.with({ scheme: "file", query: "" })
+					.toString(true);
+			} else {
 				return uri;
 			}
 		}
@@ -73,7 +94,9 @@ class Transformer implements UriTransformer {
 			return `${this.lsif}${p}`;
 		} else {
 			let file = URI.parse(uri);
-			return file.with( { scheme: LSIF_SCHEME, query: this.lsif }).toString(true);
+			return file
+				.with({ scheme: LSIF_SCHEME, query: this.lsif })
+				.toString(true);
 		}
 	}
 }
@@ -86,55 +109,58 @@ function sortedDatabaseKeys(): string[] {
 		for (let key of databases.keys()) {
 			_sortedDatabaseKeys.push(key);
 		}
-		_sortedDatabaseKeys.sort(
-			(a, b) => {
-				return a.length - b.length;
-			}
-		);
+		_sortedDatabaseKeys.sort((a, b) => {
+			return a.length - b.length;
+		});
 	}
 	return _sortedDatabaseKeys;
 }
 
 const databases: Map<string, Promise<Database>> = new Map();
 function getDatabaseKey(uri: string): string {
-	return uri.charAt(uri.length - 1) !== '/' ? `${uri}/` : uri;
+	return uri.charAt(uri.length - 1) !== "/" ? `${uri}/` : uri;
 }
 
-async function createDatabase(folder: WorkspaceFolder): Promise<Database | undefined> {
+async function createDatabase(
+	folder: WorkspaceFolder,
+): Promise<Database | undefined> {
 	let uri: URI = URI.parse(folder.uri);
 	const fsPath = uri.fsPath;
 	const extName = path.extname(fsPath);
 	if (fs.existsSync(fsPath)) {
 		try {
 			let database: Database | undefined;
-			if (extName === '.db') {
-				const Sqlite = await import('better-sqlite3');
+			if (extName === ".db") {
+				const Sqlite = await import("better-sqlite3");
 				const db = new Sqlite(fsPath, { readonly: true });
-				let format = 'graph';
+				let format = "graph";
 				try {
-					format = (db.prepare('Select * from format f').get() as any).format;
+					format = (db.prepare("Select * from format f").get() as any)
+						.format;
 				} catch (err) {
 					// Old DBs have no format. Treat is as graph
 				} finally {
 					db.close();
 				}
-				if (format === 'blob') {
-					const module = await import('./blobStore');
+				if (format === "blob") {
+					const module = await import("./blobStore");
 					database = new module.BlobStore();
 				} else {
-					const module = await import ('./graphStore');
+					const module = await import("./graphStore");
 					database = new module.GraphStore();
 				}
-			} else if (extName === '.lsif') {
-				const module = await import('./jsonStore');
+			} else if (extName === ".lsif") {
+				const module = await import("./jsonStore");
 				database = new module.JsonStore();
 			}
 			if (database !== undefined) {
-				let promise = database.load(fsPath, (workspaceRoot: string) => {
-					return new Transformer(uri, workspaceRoot);
-				}).then(() => {
-					return database!;
-				});
+				let promise = database
+					.load(fsPath, (workspaceRoot: string) => {
+						return new Transformer(uri, workspaceRoot);
+					})
+					.then(() => {
+						return database!;
+					});
 				databases.set(getDatabaseKey(folder.uri), promise);
 				return promise;
 			}
@@ -152,8 +178,8 @@ function findDatabase(uri: string): Promise<Database> | undefined {
 		// The LSIF URIs are encoded.
 		uri = URI.parse(parsed.query).toString();
 	}
-	if (uri.charAt(uri.length - 1) !== '/') {
-		uri = uri + '/';
+	if (uri.charAt(uri.length - 1) !== "/") {
+		uri = uri + "/";
 	}
 	for (let element of sorted) {
 		if (uri.startsWith(element)) {
@@ -166,32 +192,36 @@ function findDatabase(uri: string): Promise<Database> | undefined {
 let registrations: Thenable<BulkUnregistration> | undefined;
 async function checkRegistrations(): Promise<void> {
 	if (databases.size === 0 && registrations !== undefined) {
-		registrations.then(unregister => unregister.dispose(), error => connection.console.error('Failed to unregister listeners.'));
+		registrations.then(
+			(unregister) => unregister.dispose(),
+			(error) =>
+				connection.console.error("Failed to unregister listeners."),
+		);
 		registrations = undefined;
 		return;
 	}
 	if (databases.size >= 1 && registrations === undefined) {
 		let documentSelector: DocumentSelector = [
-			{ scheme: 'lsif', exclusive: true } as DocumentFilter
+			{ scheme: "lsif", exclusive: true } as DocumentFilter,
 		];
 		let toRegister: BulkRegistration = BulkRegistration.create();
 		toRegister.add(DocumentSymbolRequest.type, {
-			documentSelector
+			documentSelector,
 		});
 		toRegister.add(FoldingRangeRequest.type, {
-			documentSelector
+			documentSelector,
 		});
 		toRegister.add(DefinitionRequest.type, {
-			documentSelector
+			documentSelector,
 		});
 		toRegister.add(DeclarationRequest.type, {
-			documentSelector
+			documentSelector,
 		});
 		toRegister.add(HoverRequest.type, {
-			documentSelector
+			documentSelector,
 		});
 		toRegister.add(ReferencesRequest.type, {
-			documentSelector
+			documentSelector,
 		});
 		registrations = connection.client.register(toRegister);
 	}
@@ -208,10 +238,10 @@ connection.onInitialize((params: InitializeParams) => {
 			textDocumentSync: TextDocumentSyncKind.None,
 			workspace: {
 				workspaceFolders: {
-					supported: true
-				}
-			}
-		}
+					supported: true,
+				},
+			},
+		},
 	};
 });
 
@@ -349,7 +379,11 @@ connection.onReferences(async (params) => {
 		return null;
 	}
 	let database = await promise;
-	return database.references(params.textDocument.uri, params.position, params.context);
+	return database.references(
+		params.textDocument.uri,
+		params.position,
+		params.context,
+	);
 });
 
 connection.listen();
