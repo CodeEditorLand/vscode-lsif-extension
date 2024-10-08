@@ -2,8 +2,9 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import * as path from "path";
-import { Id } from "lsif-protocol";
+import * as path from 'path';
+
+import { Id } from 'lsif-protocol';
 
 const ctime = Date.now();
 const mtime = Date.now();
@@ -45,15 +46,7 @@ interface File extends FileStat {
 
 namespace File {
 	export function create(name: string, id: Id, hash: string): File {
-		return {
-			type: FileType.File,
-			ctime: ctime,
-			mtime: mtime,
-			size: 0,
-			name,
-			id,
-			hash,
-		};
+		return { type: FileType.File, ctime: ctime, mtime: mtime, size: 0, name, id, hash };
 	}
 }
 
@@ -65,40 +58,28 @@ interface Directory extends FileStat {
 
 namespace Directory {
 	export function create(name: string): Directory {
-		return {
-			type: FileType.Directory,
-			ctime: Date.now(),
-			mtime: Date.now(),
-			size: 0,
-			name,
-			children: new Map(),
-		};
+		return { type: FileType.Directory, ctime: Date.now(), mtime: Date.now(), size: 0, name, children: new Map() };
 	}
 }
 
 export type Entry = File | Directory;
 
 export class FileSystem {
+
 	private workspaceRoot: string;
 	private workspaceRootWithSlash: string;
-	private filesOutsideWorkspaceRoot: Map<
-		string,
-		{ id: Id; hash: string | undefined }
-	>;
+	private filesOutsideWorkspaceRoot: Map<string, { id: Id, hash: string | undefined }>;
 	private root: Directory;
 
 	constructor(workspaceRoot: string, documents: DocumentInfo[]) {
-		if (workspaceRoot.charAt(workspaceRoot.length - 1) === "/") {
-			this.workspaceRoot = workspaceRoot.substr(
-				0,
-				workspaceRoot.length - 1,
-			);
+		if (workspaceRoot.charAt(workspaceRoot.length - 1) === '/') {
+			this.workspaceRoot = workspaceRoot.substr(0, workspaceRoot.length - 1);
 			this.workspaceRootWithSlash = workspaceRoot;
 		} else {
 			this.workspaceRoot = workspaceRoot;
-			this.workspaceRootWithSlash = workspaceRoot + "/";
+			this.workspaceRootWithSlash = workspaceRoot + '/';
 		}
-		this.root = Directory.create("");
+		this.root = Directory.create('');
 		this.filesOutsideWorkspaceRoot = new Map();
 		for (let info of documents) {
 			// Do not show file outside the workspaceRoot.
@@ -111,10 +92,7 @@ export class FileSystem {
 			let basename = path.posix.basename(p);
 			let entry = this.lookup(dirname, true);
 			if (entry && entry.type === FileType.Directory) {
-				entry.children.set(
-					basename,
-					File.create(basename, info.id, info.hash),
-				);
+				entry.children.set(basename, File.create(basename, info.id, info.hash));
 			}
 		}
 	}
@@ -127,7 +105,7 @@ export class FileSystem {
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return null;
 		}
-		let p = isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length);
+		let p = isRoot ? '' : uri.substring(this.workspaceRootWithSlash.length);
 		let entry = this.lookup(p, false);
 		return entry ? entry : null;
 	}
@@ -137,7 +115,7 @@ export class FileSystem {
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return [];
 		}
-		let p = isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length);
+		let p = isRoot ? '' : uri.substring(this.workspaceRootWithSlash.length);
 		let entry = this.lookup(p, false);
 		if (entry === undefined || entry.type !== FileType.Directory) {
 			return [];
@@ -149,9 +127,7 @@ export class FileSystem {
 		return result;
 	}
 
-	public getFileInfo(
-		uri: string,
-	): { id: Id; hash: string | undefined } | undefined {
+	public getFileInfo(uri: string): { id: Id, hash: string | undefined } | undefined {
 		let result = this.filesOutsideWorkspaceRoot.get(uri);
 		if (result !== undefined) {
 			return result;
@@ -160,17 +136,15 @@ export class FileSystem {
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return undefined;
 		}
-		let entry = this.lookup(
-			isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length),
-		);
+		let entry = this.lookup(isRoot ? '' : uri.substring(this.workspaceRootWithSlash.length));
 		return entry && entry.type === FileType.File ? entry : undefined;
 	}
 
 	private lookup(uri: string, create: boolean = false): Entry | undefined {
-		let parts = uri.split("/");
+		let parts = uri.split('/');
 		let entry: Entry = this.root;
 		for (const part of parts) {
-			if (!part || part === ".") {
+			if (!part || part === '.') {
 				continue;
 			}
 			let child: Entry | undefined;

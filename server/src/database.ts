@@ -2,11 +2,11 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { Id, Range } from "lsif-protocol";
-import * as lsp from "vscode-languageserver";
-import { URI } from "vscode-uri";
+import { URI } from 'vscode-uri';
+import * as lsp from 'vscode-languageserver';
+import { Range, Id } from 'lsif-protocol';
 
-import { DocumentInfo, FileStat, FileSystem, FileType } from "./files";
+import { FileType, FileSystem, DocumentInfo, FileStat } from './files';
 
 export interface UriTransformer {
 	toDatabase(uri: string): string;
@@ -14,33 +14,25 @@ export interface UriTransformer {
 }
 
 export const noopTransformer: UriTransformer = {
-	toDatabase: (uri) => uri,
-	fromDatabase: (uri) => uri,
+	toDatabase: uri => uri,
+	fromDatabase: uri => uri
 };
 
 export abstract class Database {
+
 	private fileSystem!: FileSystem;
 	private uriTransformer!: UriTransformer;
 
-	protected constructor() {}
-
-	protected initialize(
-		transformerFactory: (workspaceRoot: string) => UriTransformer,
-	): void {
-		const workspaceRoot = this.getWorkspaceRoot().toString(true);
-		this.uriTransformer = transformerFactory
-			? transformerFactory(workspaceRoot)
-			: noopTransformer;
-		this.fileSystem = new FileSystem(
-			workspaceRoot,
-			this.getDocumentInfos(),
-		);
+	protected constructor() {
 	}
 
-	public abstract load(
-		file: string,
-		transformerFactory: (workspaceRoot: string) => UriTransformer,
-	): Promise<void>;
+	protected initialize(transformerFactory: (workspaceRoot: string) => UriTransformer): void {
+		const workspaceRoot = this.getWorkspaceRoot().toString(true);
+		this.uriTransformer = transformerFactory ? transformerFactory(workspaceRoot) : noopTransformer;
+		this.fileSystem = new FileSystem(workspaceRoot, this.getDocumentInfos());
+	}
+
+	public abstract load(file: string, transformerFactory: (workspaceRoot: string) => UriTransformer): Promise<void>;
 
 	public abstract close(): void;
 
@@ -62,9 +54,7 @@ export abstract class Database {
 	}
 
 	public readDirectory(uri: string): [string, FileType][] {
-		return this.fileSystem.readDirectory(
-			this.uriTransformer.toDatabase(uri),
-		);
+		return this.fileSystem.readDirectory(this.uriTransformer.toDatabase(uri));
 	}
 
 	public readFileContent(uri: string): string | null {
@@ -83,56 +73,30 @@ export abstract class Database {
 		return result;
 	}
 
-	protected abstract findFile(
-		uri: string,
-	): { id: Id; hash: string | undefined } | undefined;
+	protected abstract findFile(uri: string):{ id: Id; hash: string | undefined; } | undefined;
 
-	protected abstract fileContent(info: {
-		id: Id;
-		hash: string | undefined;
-	}): string | undefined;
+	protected abstract fileContent( info: { id: Id; hash: string | undefined; } ) : string | undefined;
 
 	public abstract foldingRanges(uri: string): lsp.FoldingRange[] | undefined;
 
-	public abstract documentSymbols(
-		uri: string,
-	): lsp.DocumentSymbol[] | undefined;
+	public abstract documentSymbols(uri: string): lsp.DocumentSymbol[] | undefined;
 
-	public abstract hover(
-		uri: string,
-		position: lsp.Position,
-	): lsp.Hover | undefined;
+	public abstract hover(uri: string, position: lsp.Position): lsp.Hover | undefined;
 
-	public abstract declarations(
-		uri: string,
-		position: lsp.Position,
-	): lsp.Location | lsp.Location[] | undefined;
+	public abstract declarations(uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined;
 
-	public abstract definitions(
-		uri: string,
-		position: lsp.Position,
-	): lsp.Location | lsp.Location[] | undefined;
+	public abstract definitions(uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined;
 
-	public abstract references(
-		uri: string,
-		position: lsp.Position,
-		context: lsp.ReferenceContext,
-	): lsp.Location[] | undefined;
+	public abstract references(uri: string, position: lsp.Position, context: lsp.ReferenceContext): lsp.Location[] | undefined;
 
 	protected asDocumentSymbol(range: Range): lsp.DocumentSymbol | undefined {
 		let tag = range.tag;
-		if (
-			tag === undefined ||
-			!(tag.type === "declaration" || tag.type === "definition")
-		) {
+		if (tag === undefined || !(tag.type === 'declaration' || tag.type === 'definition')) {
 			return undefined;
 		}
 		return lsp.DocumentSymbol.create(
-			tag.text,
-			tag.detail || "",
-			tag.kind,
-			tag.fullRange,
-			this.asRange(range),
+			tag.text, tag.detail || '', tag.kind,
+			tag.fullRange, this.asRange(range)
 		);
 	}
 
@@ -140,12 +104,12 @@ export abstract class Database {
 		return {
 			start: {
 				line: value.start.line,
-				character: value.start.character,
+				character: value.start.character
 			},
 			end: {
 				line: value.end.line,
-				character: value.end.character,
-			},
+				character: value.end.character
+			}
 		};
 	}
 
