@@ -2,18 +2,18 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-'use strict';
+"use strict";
 
-import * as protocol from 'lsif-protocol';
+import * as protocol from "lsif-protocol";
 
 export enum CompressionKind {
-	id = 'id',
-	ids = 'ids',
-	scalar = 'scalar',
-	literal = 'literal',
-	array = 'array',
-	any = 'any',
-	raw = 'raw'
+	id = "id",
+	ids = "ids",
+	scalar = "scalar",
+	literal = "literal",
+	array = "array",
+	any = "any",
+	raw = "raw",
 }
 
 export interface CompressorPropertyDescription {
@@ -36,7 +36,6 @@ export interface CompressorPropertyDescription {
 	 * Short form if the value is a string.
 	 */
 	shortForm?: [string, string | number][];
-
 }
 
 export interface CompressorData {
@@ -67,7 +66,6 @@ export interface CompressorDescription {
  * The meta data vertex.
  */
 export interface MetaData extends protocol.MetaData {
-
 	/**
 	 * A description of the compressor used.
 	 */
