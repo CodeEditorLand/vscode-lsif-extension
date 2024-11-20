@@ -1,14 +1,14 @@
 {
+	"name": "lsif-server",
+	"description": "Generic Language Server Index Format Server",
+	"scripts": {},
 	"dependencies": {
 		"better-sqlite3": "11.5.0",
 		"lsif-protocol": "0.6.0-next.7",
 		"semver": "7.6.3"
 	},
-	"description": "Generic Language Server Index Format Server",
 	"devDependencies": {
 		"@types/better-sqlite3": "7.6.12",
 		"@types/semver": "7.5.8"
-	},
-	"name": "lsif-server",
-	"scripts": {}
+	}
 }
