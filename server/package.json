@@ -6,7 +6,7 @@
 	},
 	"description": "Generic Language Server Index Format Server",
 	"devDependencies": {
-		"@types/better-sqlite3": "7.6.11",
+		"@types/better-sqlite3": "7.6.12",
 		"@types/semver": "7.5.8"
 	},
 	"name": "lsif-server",
