@@ -1,8 +1,11 @@
 {
-	"activationEvents": [
-		"onFileSystem:lsif",
-		"onCommand:lsif.openDatabase"
-	],
+	"name": "lsif-browser",
+	"description": "Extension to browse LSIF databases",
+	"main": "./client/out/extension",
+	"scripts": {
+		"clean": "tsc -b --clean",
+		"compile": "tsc -b"
+	},
 	"contributes": {
 		"commands": [
 			{
@@ -28,17 +31,14 @@
 			"type": "object"
 		}
 	},
-	"description": "Extension to browse LSIF databases",
+	"activationEvents": [
+		"onFileSystem:lsif",
+		"onCommand:lsif.openDatabase"
+	],
 	"devDependencies": {
 		"@types/node": "22.9.1"
 	},
 	"enabledApiProposals": [
 		"documentFiltersExclusive"
-	],
-	"main": "./client/out/extension",
-	"name": "lsif-browser",
-	"scripts": {
-		"clean": "tsc -b --clean",
-		"compile": "tsc -b"
-	}
+	]
 }
