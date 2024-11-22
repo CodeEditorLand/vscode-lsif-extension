@@ -71,6 +71,7 @@ interface DocumentBlob {
 	definitionResults?: LiteralMap<DefinitionResultData>;
 	referenceResults?: LiteralMap<ReferenceResultData>;
 	foldingRanges?: lsp.FoldingRange[];
+
 	documentSymbols?: lsp.DocumentSymbol[] | RangeBasedDocumentSymbol[];
 	diagnostics?: lsp.Diagnostic[];
 }
@@ -86,6 +87,7 @@ interface BlobResult {
 
 interface DocumentResult {
 	id: Id;
+
 	documentHash: string;
 }
 
@@ -197,10 +199,12 @@ export class BlobStore extends Database {
 				.prepare("Select * from versionTags Order by dateTime desc")
 				.get() as any
 		).tag;
+
 		if (typeof this.version !== "string") {
 			throw new Error("Version tag must be a string");
 		}
 		this.initialize(transformerFactory);
+
 		return Promise.resolve();
 	}
 
@@ -208,6 +212,7 @@ export class BlobStore extends Database {
 		let result: MetaDataResult[] = this.db
 			.prepare("Select * from meta")
 			.all() as MetaDataResult[];
+
 		if (result === undefined || result.length !== 1) {
 			throw new Error("Failed to read meta data record.");
 		}
@@ -226,6 +231,7 @@ export class BlobStore extends Database {
 		let result: DocumentsResult[] = this.allDocumentsStmt.all(
 			this.version,
 		) as DocumentsResult[];
+
 		if (result === undefined) {
 			return [];
 		}
@@ -240,6 +246,7 @@ export class BlobStore extends Database {
 
 	private getBlob(documentId: Id): DocumentBlob {
 		let result = this.blobs.get(documentId);
+
 		if (result === undefined) {
 			const blobResult: BlobResult = this.findBlobStmt.get(
 				documentId,
@@ -259,6 +266,7 @@ export class BlobStore extends Database {
 			version: this.version,
 			uri: uri,
 		}) as DocumentResult;
+
 		return result !== undefined
 			? { id: result.id, hash: result.documentHash }
 			: undefined;
@@ -266,6 +274,7 @@ export class BlobStore extends Database {
 
 	protected fileContent(info: { id: Id; hash: string | undefined }): string {
 		const blob = this.getBlob(info.id);
+
 		return Buffer.from(blob.contents).toString("base64");
 	}
 
@@ -282,6 +291,7 @@ export class BlobStore extends Database {
 			this.toDatabase(uri),
 			position,
 		);
+
 		if (
 			range === undefined ||
 			blob === undefined ||
@@ -295,10 +305,12 @@ export class BlobStore extends Database {
 			range,
 			"hoverResult",
 		);
+
 		if (result !== undefined) {
 			return result;
 		}
 		const moniker = this.findMoniker(blob.resultSets, blob.monikers, range);
+
 		if (moniker === undefined) {
 			return undefined;
 		}
@@ -307,10 +319,12 @@ export class BlobStore extends Database {
 			scheme: moniker.scheme,
 			identifier: moniker.identifier,
 		}) as BlobResult;
+
 		if (qResult === undefined) {
 			return undefined;
 		}
 		result = JSON.parse(qResult.content.toString()) as lsp.Hover;
+
 		if (result.range === undefined) {
 			result.range = lsp.Range.create(
 				range.start.line,
@@ -330,6 +344,7 @@ export class BlobStore extends Database {
 			this.toDatabase(uri),
 			position,
 		);
+
 		if (
 			range === undefined ||
 			blob === undefined ||
@@ -343,12 +358,14 @@ export class BlobStore extends Database {
 			range,
 			"declarationResult",
 		);
+
 		if (resultData === undefined) {
 			const moniker = this.findMoniker(
 				blob.resultSets,
 				blob.monikers,
 				range,
 			);
+
 			if (moniker === undefined) {
 				return undefined;
 			}
@@ -366,6 +383,7 @@ export class BlobStore extends Database {
 			scheme: moniker.scheme,
 			identifier: moniker.identifier,
 		}) as DeclsResult[];
+
 		if (qResult === undefined || qResult.length === 0) {
 			return undefined;
 		}
@@ -390,6 +408,7 @@ export class BlobStore extends Database {
 			this.toDatabase(uri),
 			position,
 		);
+
 		if (
 			range === undefined ||
 			blob === undefined ||
@@ -403,12 +422,14 @@ export class BlobStore extends Database {
 			range,
 			"definitionResult",
 		);
+
 		if (resultData === undefined) {
 			const moniker = this.findMoniker(
 				blob.resultSets,
 				blob.monikers,
 				range,
 			);
+
 			if (moniker === undefined) {
 				return undefined;
 			}
@@ -426,6 +447,7 @@ export class BlobStore extends Database {
 			scheme: moniker.scheme,
 			identifier: moniker.identifier,
 		}) as DefsResult[];
+
 		if (qResult === undefined || qResult.length === 0) {
 			return undefined;
 		}
@@ -451,6 +473,7 @@ export class BlobStore extends Database {
 			this.toDatabase(uri),
 			position,
 		);
+
 		if (
 			range === undefined ||
 			blob === undefined ||
@@ -464,18 +487,21 @@ export class BlobStore extends Database {
 			range,
 			"referenceResult",
 		);
+
 		if (resultData === undefined) {
 			const moniker = this.findMoniker(
 				blob.resultSets,
 				blob.monikers,
 				range,
 			);
+
 			if (moniker === undefined) {
 				return undefined;
 			}
 			return this.findReferencesInDB(moniker, context);
 		} else {
 			let result: lsp.Location[] = [];
+
 			if (
 				context.includeDeclaration &&
 				resultData.declarations !== undefined
@@ -522,10 +548,12 @@ export class BlobStore extends Database {
 			scheme: moniker.scheme,
 			identifier: moniker.identifier,
 		}) as RefsResult[];
+
 		if (qResult === undefined || qResult.length === 0) {
 			return undefined;
 		}
 		let result: lsp.Location[] = [];
+
 		for (let item of qResult) {
 			if (context.includeDeclaration || item.kind === 2) {
 				result.push(
@@ -551,8 +579,10 @@ export class BlobStore extends Database {
 		property: keyof (RangeData | ResultSetData),
 	): T | undefined {
 		let current: RangeData | ResultSetData | undefined = data;
+
 		while (current !== undefined) {
 			let value = current[property];
+
 			if (value !== undefined) {
 				return map[value];
 			}
@@ -575,7 +605,9 @@ export class BlobStore extends Database {
 			return undefined;
 		}
 		let current: RangeData | ResultSetData | undefined = data;
+
 		let result: Id | undefined;
+
 		while (current !== undefined) {
 			if (current.moniker !== undefined) {
 				result = current.moniker;
@@ -595,13 +627,17 @@ export class BlobStore extends Database {
 		position: lsp.Position,
 	): { range: RangeData | undefined; blob: DocumentBlob | undefined } {
 		const documentId = this.findFile(uri);
+
 		if (documentId === undefined) {
 			return { range: undefined, blob: undefined };
 		}
 		const blob = this.getBlob(documentId.id);
+
 		let candidate: RangeData | undefined;
+
 		for (let key of Object.keys(blob.ranges)) {
 			let range = blob.ranges[key];
+
 			if (BlobStore.containsPosition(range, position)) {
 				if (!candidate) {
 					candidate = range;
@@ -622,6 +658,7 @@ export class BlobStore extends Database {
 	): lsp.Location[] {
 		return ids.map((id) => {
 			let range = ranges[id];
+
 			return lsp.Location.create(
 				uri,
 				lsp.Range.create(

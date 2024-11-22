@@ -108,8 +108,11 @@ export function deactivate(): Thenable<void> | undefined {
 
 namespace FileType {
 	export const Unknown: 0 = 0;
+
 	export const File: 1 = 1;
+
 	export const Directory: 2 = 2;
+
 	export const SymbolicLink: 64 = 64;
 }
 
@@ -176,6 +179,7 @@ class LsifFS implements FileSystemProvider {
 
 	async stat(uri: Uri): Promise<FileStat> {
 		let client = await this.client;
+
 		return client
 			.sendRequest(StatFileRequest.type, {
 				uri: client.code2ProtocolConverter.asUri(uri),
@@ -195,9 +199,11 @@ class LsifFS implements FileSystemProvider {
 
 	async readDirectory(uri: Uri): Promise<[string, VFileType][]> {
 		let client = await this.client;
+
 		let params: ReadDirectoryParams = {
 			uri: client.code2ProtocolConverter.asUri(uri),
 		};
+
 		return client
 			.sendRequest(ReadDirectoryRequest.type, params)
 			.then((values) => {
@@ -207,13 +213,16 @@ class LsifFS implements FileSystemProvider {
 
 	async readFile(uri: Uri): Promise<Uint8Array> {
 		let client = await this.client;
+
 		let params: ReadFileParams = {
 			uri: client.code2ProtocolConverter.asUri(uri),
 		};
+
 		return client
 			.sendRequest(ReadFileRequest.type, params)
 			.then((value) => {
 				let result = new Uint8Array(Buffer.from(value, "base64"));
+
 				return result;
 			});
 	}

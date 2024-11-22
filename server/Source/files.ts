@@ -6,12 +6,16 @@ import * as path from "path";
 import { Id } from "lsif-protocol";
 
 const ctime = Date.now();
+
 const mtime = Date.now();
 
 export namespace FileType {
 	export const Unknown: 0 = 0;
+
 	export const File: 1 = 1;
+
 	export const Directory: 2 = 2;
+
 	export const SymbolicLink: 64 = 64;
 }
 
@@ -100,16 +104,22 @@ export class FileSystem {
 		}
 		this.root = Directory.create("");
 		this.filesOutsideWorkspaceRoot = new Map();
+
 		for (let info of documents) {
 			// Do not show file outside the workspaceRoot.
 			if (!info.uri.startsWith(this.workspaceRootWithSlash)) {
 				this.filesOutsideWorkspaceRoot.set(info.uri, info);
+
 				continue;
 			}
 			let p = info.uri.substring(workspaceRoot.length);
+
 			let dirname = path.posix.dirname(p);
+
 			let basename = path.posix.basename(p);
+
 			let entry = this.lookup(dirname, true);
+
 			if (entry && entry.type === FileType.Directory) {
 				entry.children.set(
 					basename,
@@ -124,25 +134,32 @@ export class FileSystem {
 			return { type: FileType.File, ctime, mtime, size: 0 };
 		}
 		let isRoot = this.workspaceRoot === uri;
+
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return null;
 		}
 		let p = isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length);
+
 		let entry = this.lookup(p, false);
+
 		return entry ? entry : null;
 	}
 
 	public readDirectory(uri: string): [string, FileType][] {
 		let isRoot = this.workspaceRoot === uri;
+
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return [];
 		}
 		let p = isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length);
+
 		let entry = this.lookup(p, false);
+
 		if (entry === undefined || entry.type !== FileType.Directory) {
 			return [];
 		}
 		let result: [string, FileType][] = [];
+
 		for (let child of entry.children.values()) {
 			result.push([child.name, child.type]);
 		}
@@ -153,29 +170,36 @@ export class FileSystem {
 		uri: string,
 	): { id: Id; hash: string | undefined } | undefined {
 		let result = this.filesOutsideWorkspaceRoot.get(uri);
+
 		if (result !== undefined) {
 			return result;
 		}
 		let isRoot = this.workspaceRoot === uri;
+
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return undefined;
 		}
 		let entry = this.lookup(
 			isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length),
 		);
+
 		return entry && entry.type === FileType.File ? entry : undefined;
 	}
 
 	private lookup(uri: string, create: boolean = false): Entry | undefined {
 		let parts = uri.split("/");
+
 		let entry: Entry = this.root;
+
 		for (const part of parts) {
 			if (!part || part === ".") {
 				continue;
 			}
 			let child: Entry | undefined;
+
 			if (entry.type === FileType.Directory) {
 				child = entry.children.get(part);
+
 				if (child === undefined && create) {
 					child = Directory.create(part);
 					entry.children.set(part, child);

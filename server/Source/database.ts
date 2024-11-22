@@ -50,11 +50,14 @@ export abstract class Database {
 
 	public stat(uri: string): FileStat | null {
 		let transformed = this.uriTransformer.toDatabase(uri);
+
 		let result = this.fileSystem.stat(transformed);
+
 		if (result !== null) {
 			return result;
 		}
 		let id = this.findFile(transformed);
+
 		if (id === undefined) {
 			return null;
 		}
@@ -69,7 +72,9 @@ export abstract class Database {
 
 	public readFileContent(uri: string): string | null {
 		let transformed = this.uriTransformer.toDatabase(uri);
+
 		let info = this.fileSystem.getFileInfo(transformed);
+
 		if (info === undefined) {
 			info = this.findFile(transformed);
 		}
@@ -77,6 +82,7 @@ export abstract class Database {
 			return null;
 		}
 		let result = this.fileContent(info);
+
 		if (result === undefined) {
 			return null;
 		}
@@ -121,6 +127,7 @@ export abstract class Database {
 
 	protected asDocumentSymbol(range: Range): lsp.DocumentSymbol | undefined {
 		let tag = range.tag;
+
 		if (
 			tag === undefined ||
 			!(tag.type === "declaration" || tag.type === "definition")

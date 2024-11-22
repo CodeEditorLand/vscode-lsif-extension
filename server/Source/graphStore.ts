@@ -55,6 +55,7 @@ class Decompressor {
 		this.id = description.id;
 		this.parentId = description.parent;
 		this.properties = [];
+
 		for (let item of description.properties) {
 			let propertyDescription: DecompressorPropertyDescription = {
 				name: item.name,
@@ -62,8 +63,10 @@ class Decompressor {
 				compressionKind: item.compressionKind,
 				longForm: undefined,
 			};
+
 			if (item.shortForm !== undefined) {
 				propertyDescription.longForm = new Map();
+
 				for (let element of item.shortForm) {
 					propertyDescription.longForm.set(element[1], element[0]);
 				}
@@ -95,35 +98,50 @@ class Decompressor {
 			this.parent !== undefined
 				? this.parent.decompress(compressed)
 				: Object.create(null);
+
 		for (let property of this.properties) {
 			let index = property.index;
+
 			let value = compressed[index];
+
 			if (value === null || value === undefined) {
 				continue;
 			}
 			let decompressor: Decompressor | undefined;
+
 			switch (property.compressionKind) {
 				case CompressionKind.id:
 					result[property.name] = value;
+
 					break;
+
 				case CompressionKind.ids:
 					result[property.name] = value;
+
 					break;
+
 				case CompressionKind.raw:
 					result[property.name] = value;
+
 					break;
+
 				case CompressionKind.scalar:
 					let convertedScalar = value;
+
 					if (property.longForm !== undefined) {
 						let long = property.longForm.get(value);
+
 						if (long !== undefined) {
 							convertedScalar = long;
 						}
 					}
 					let dotIndex = property.name.indexOf(".");
+
 					if (dotIndex !== -1) {
 						let container = property.name.substr(0, dotIndex);
+
 						let name = property.name.substring(dotIndex + 1);
+
 						if (result[container] === undefined) {
 							result[container] = Object.create(null);
 						}
@@ -132,6 +150,7 @@ class Decompressor {
 						result[property.name] = convertedScalar;
 					}
 					break;
+
 				case CompressionKind.literal:
 					if (!Array.isArray(value) || typeof value[0] !== "number") {
 						throw new Error(
@@ -140,6 +159,7 @@ class Decompressor {
 					}
 					let convertedLiteral: any;
 					decompressor = Decompressor.get(value[0]);
+
 					if (decompressor === undefined) {
 						throw new Error(
 							`No decompression found for property ${property.name} and id ${value[0]}`,
@@ -147,7 +167,9 @@ class Decompressor {
 					}
 					convertedLiteral = decompressor.decompress(value);
 					result[property.name] = convertedLiteral;
+
 					break;
+
 				case CompressionKind.array:
 					if (!Array.isArray(value)) {
 						throw new Error(
@@ -155,8 +177,10 @@ class Decompressor {
 						);
 					}
 					let convertedArray: any[] = [];
+
 					for (let element of value) {
 						let type = typeof element;
+
 						if (
 							type === "string" ||
 							type === "number" ||
@@ -169,6 +193,7 @@ class Decompressor {
 							typeof element[0] === "number"
 						) {
 							decompressor = Decompressor.get(element[0]);
+
 							if (decompressor === undefined) {
 								throw new Error(
 									`No decompression found for property ${property.name} and id ${element[0]}`,
@@ -184,10 +209,14 @@ class Decompressor {
 						}
 					}
 					result[property.name] = convertedArray;
+
 					break;
+
 				case CompressionKind.any:
 					let convertedAny: any;
+
 					let type = typeof value;
+
 					if (
 						type === "string" ||
 						type === "number" ||
@@ -196,8 +225,10 @@ class Decompressor {
 						convertedAny = value;
 					} else if (Array.isArray(value)) {
 						convertedAny = [];
+
 						for (let element of value) {
 							let type = typeof element;
+
 							if (
 								type === "string" ||
 								type === "number" ||
@@ -210,6 +241,7 @@ class Decompressor {
 								typeof element[0] === "number"
 							) {
 								decompressor = Decompressor.get(element[0]);
+
 								if (decompressor === undefined) {
 									throw new Error(
 										`No decompression found for property ${property.name} and id ${element[0]}`,
@@ -231,7 +263,9 @@ class Decompressor {
 						);
 					}
 					result[property.name] = convertedAny;
+
 					break;
+
 				default:
 					throw new Error(
 						`Compression kind ${property.compressionKind} unknown.`,
@@ -297,6 +331,7 @@ interface PreviousResult {
 interface DocumentInfoResult extends IdResult {
 	projectId: Id;
 	uri: string;
+
 	documentHash: string;
 }
 
@@ -329,12 +364,16 @@ abstract class Retriever<T extends IdResult> {
 
 	public run(): T[] {
 		let result: T[] = new Array(this.values.length);
+
 		let batch: Id[] = [];
+
 		let mapping: Map<Id, number> = new Map();
+
 		for (let i = 0; i < this.values.length; i++) {
 			let value = this.values[i];
 			batch.push(value);
 			mapping.set(value, i);
+
 			if (batch.length === this.batchSize) {
 				this.retrieveBatch(result, batch, mapping);
 				batch = [];
@@ -345,6 +384,7 @@ abstract class Retriever<T extends IdResult> {
 			this.retrieveBatch(result, batch, mapping);
 		}
 		this.values = [];
+
 		return result;
 	}
 
@@ -359,6 +399,7 @@ abstract class Retriever<T extends IdResult> {
 				: this.getRestStatement(batch.length);
 
 		let data: T[] = stmt.all(batch) as T[];
+
 		if (batch.length !== data.length) {
 			throw new Error(
 				`Couldn't retrieve all data for retriever ${this.name}`,
@@ -395,6 +436,7 @@ class VertexRetriever extends Retriever<VertexResult> {
 
 	protected getFullStatement(size: number): Sqlite.Statement {
 		let result = VertexRetriever.preparedStatements.get(size);
+
 		if (!result) {
 			result = this.prepare(VertexRetriever.statement, size);
 			VertexRetriever.preparedStatements.set(size, result);
@@ -423,6 +465,7 @@ class LocationRetriever extends Retriever<LocationResult> {
 
 	protected getFullStatement(size: number): Sqlite.Statement {
 		let result = LocationRetriever.preparedStatements.get(size);
+
 		if (!result) {
 			result = this.prepare(LocationRetriever.statement, size);
 			LocationRetriever.preparedStatements.set(size, result);
@@ -500,10 +543,12 @@ export class GraphStore extends Database {
 			this.edgeLabels !== undefined
 				? this.edgeLabels.get(EdgeLabels.next)!
 				: EdgeLabels.next;
+
 		const monikerEdgeLabel =
 			this.edgeLabels !== undefined
 				? this.edgeLabels.get(EdgeLabels.moniker)!
 				: EdgeLabels.moniker;
+
 		const monikerAttachLabel =
 			this.edgeLabels !== undefined
 				? this.edgeLabels.get(EdgeLabels.attach)!
@@ -605,6 +650,7 @@ export class GraphStore extends Database {
 			].join(" "),
 		);
 		this.initialize(transformerFactory);
+
 		return Promise.resolve();
 	}
 
@@ -612,14 +658,17 @@ export class GraphStore extends Database {
 		let result: MetaDataResult[] = this.db
 			.prepare("Select * from meta")
 			.all() as MetaDataResult[];
+
 		if (result === undefined || result.length !== 1) {
 			throw new Error("Failed to read meta data record.");
 		}
 		let metaData: MetaData = JSON.parse(result[0].value);
+
 		if (metaData.compressors !== undefined) {
 			this.vertexLabels = new Map();
 			this.edgeLabels = new Map();
 			this.itemEdgeProperties = new Map();
+
 			for (let decription of metaData.compressors.all) {
 				new Decompressor(decription);
 			}
@@ -630,10 +679,12 @@ export class GraphStore extends Database {
 			let decompressor = Decompressor.get(
 				metaData.compressors.vertexCompressor,
 			);
+
 			if (decompressor === undefined) {
 				throw new Error("No vertex decompressor found.");
 			}
 			let description = decompressor.getPropertyDescription("label");
+
 			if (
 				description === undefined ||
 				description.longForm === undefined
@@ -647,10 +698,12 @@ export class GraphStore extends Database {
 			decompressor = Decompressor.get(
 				metaData.compressors.edgeCompressor,
 			);
+
 			if (decompressor === undefined) {
 				throw new Error("No edge decompressor found.");
 			}
 			description = decompressor.getPropertyDescription("label");
+
 			if (
 				description === undefined ||
 				description.longForm === undefined
@@ -664,10 +717,12 @@ export class GraphStore extends Database {
 			decompressor = Decompressor.get(
 				metaData.compressors.itemEdgeCompressor,
 			);
+
 			if (decompressor === undefined) {
 				throw new Error("No item edge decompressor found.");
 			}
 			description = decompressor.getPropertyDescription("property");
+
 			if (
 				description === undefined ||
 				description.longForm === undefined
@@ -685,6 +740,7 @@ export class GraphStore extends Database {
 			this.vertexLabels !== undefined
 				? this.vertexLabels.get(VertexLabels.source)
 				: VertexLabels.source;
+
 		const source: Source = this.decompress(
 			JSON.parse(
 				(
@@ -696,6 +752,7 @@ export class GraphStore extends Database {
 				).value,
 			),
 		);
+
 		if (source !== undefined) {
 			this.workspaceRoot = URI.parse(source.workspaceRoot);
 		}
@@ -712,6 +769,7 @@ export class GraphStore extends Database {
 	protected getDocumentInfos(): DocumentInfo[] {
 		let result: DocumentInfoResult[] =
 			this.allDocumentsStmt.all() as DocumentInfoResult[];
+
 		if (result === undefined) {
 			return [];
 		}
@@ -724,6 +782,7 @@ export class GraphStore extends Database {
 		uri: string,
 	): { id: Id; hash: string | undefined } | undefined {
 		let result = this.findDocumentStmt.get(uri) as any;
+
 		return result;
 	}
 
@@ -731,6 +790,7 @@ export class GraphStore extends Database {
 		let result: ContentResult = this.getDocumentContentStmt.get(
 			info.hash,
 		) as ContentResult;
+
 		if (!result || !result.content) {
 			return "";
 		}
@@ -742,6 +802,7 @@ export class GraphStore extends Database {
 			this.toDatabase(uri),
 			EdgeLabels.textDocument_foldingRange,
 		);
+
 		if (foldingResult === undefined) {
 			return undefined;
 		}
@@ -753,6 +814,7 @@ export class GraphStore extends Database {
 			this.toDatabase(uri),
 			EdgeLabels.textDocument_documentSymbol,
 		);
+
 		if (symbolResult === undefined) {
 			return undefined;
 		}
@@ -763,12 +825,15 @@ export class GraphStore extends Database {
 			return symbolResult.result as lsp.DocumentSymbol[];
 		} else {
 			const vertexRetriever = new VertexRetriever(this.db, 16);
+
 			let collectRanges = (element: RangeBasedDocumentSymbol) => {
 				vertexRetriever.add(element.id);
+
 				if (element.children) {
 					element.children.forEach(collectRanges);
 				}
 			};
+
 			let convert = (
 				result: lsp.DocumentSymbol[],
 				elements: RangeBasedDocumentSymbol[],
@@ -776,11 +841,14 @@ export class GraphStore extends Database {
 			) => {
 				for (let element of elements) {
 					let range = ranges.get(element.id);
+
 					if (range !== undefined) {
 						let symbol: lsp.DocumentSymbol | undefined =
 							this.asDocumentSymbol(range);
+
 						if (symbol) {
 							result.push(symbol);
+
 							if (
 								element.children !== undefined &&
 								element.children.length > 0
@@ -799,10 +867,14 @@ export class GraphStore extends Database {
 			(symbolResult.result as RangeBasedDocumentSymbol[]).forEach(
 				collectRanges,
 			);
+
 			let data = vertexRetriever.run();
+
 			let ranges: Map<Id, Range> = new Map();
+
 			for (let element of data) {
 				let range: Range = this.decompress(JSON.parse(element.value));
+
 				if (range) {
 					ranges.set(range.id, range);
 				}
@@ -813,12 +885,14 @@ export class GraphStore extends Database {
 				symbolResult.result as RangeBasedDocumentSymbol[],
 				ranges,
 			);
+
 			return result;
 		}
 	}
 
 	public hover(uri: string, position: lsp.Position): lsp.Hover | undefined {
 		const ranges = this.findRange(this.toDatabase(uri), position);
+
 		if (ranges === undefined) {
 			return undefined;
 		}
@@ -828,6 +902,7 @@ export class GraphStore extends Database {
 				range.id,
 				EdgeLabels.textDocument_hover,
 			);
+
 			if (hoverResult === undefined || hoverResult.result === undefined) {
 				return undefined;
 			}
@@ -835,6 +910,7 @@ export class GraphStore extends Database {
 				Object.create(null),
 				hoverResult.result,
 			);
+
 			if (result.range === undefined) {
 				result.range = {
 					start: {
@@ -851,8 +927,10 @@ export class GraphStore extends Database {
 		};
 
 		let result: lsp.Hover | undefined;
+
 		for (const range of ranges) {
 			result = findHover(range);
+
 			if (result !== undefined) {
 				break;
 			}
@@ -866,6 +944,7 @@ export class GraphStore extends Database {
 		if (Array.isArray(result.contents)) {
 			for (let i = 0; i < result.contents.length; ) {
 				const elem = result.contents[i];
+
 				if (
 					typeof elem !== "string" &&
 					elem.language === undefined &&
@@ -885,6 +964,7 @@ export class GraphStore extends Database {
 		position: lsp.Position,
 	): lsp.Location | lsp.Location[] | undefined {
 		const ranges = this.findRange(this.toDatabase(uri), position);
+
 		if (ranges === undefined) {
 			return undefined;
 		}
@@ -896,14 +976,17 @@ export class GraphStore extends Database {
 				range.id,
 				EdgeLabels.textDocument_declaration,
 			);
+
 			if (declarationResult === undefined) {
 				return undefined;
 			}
 
 			const result: lsp.Location[] = [];
+
 			const queryResult: LocationResult[] = this.findRangeFromResult.all({
 				id: declarationResult.id,
 			}) as LocationResult[];
+
 			if (queryResult && queryResult.length > 0) {
 				for (let item of queryResult) {
 					result.push(this.createLocation(item));
@@ -914,6 +997,7 @@ export class GraphStore extends Database {
 
 		for (const range of ranges) {
 			const result = findDeclaration(range);
+
 			if (result !== undefined) {
 				return result;
 			}
@@ -926,6 +1010,7 @@ export class GraphStore extends Database {
 		position: lsp.Position,
 	): lsp.Location | lsp.Location[] | undefined {
 		const ranges = this.findRange(this.toDatabase(uri), position);
+
 		if (ranges === undefined) {
 			return undefined;
 		}
@@ -937,14 +1022,17 @@ export class GraphStore extends Database {
 				range.id,
 				EdgeLabels.textDocument_definition,
 			);
+
 			if (definitionResult === undefined) {
 				return undefined;
 			}
 
 			const result: lsp.Location[] = [];
+
 			const queryResult: LocationResult[] = this.findRangeFromResult.all({
 				id: definitionResult.id,
 			}) as LocationResult[];
+
 			if (queryResult && queryResult.length > 0) {
 				for (let item of queryResult) {
 					result.push(this.createLocation(item));
@@ -955,6 +1043,7 @@ export class GraphStore extends Database {
 
 		for (const range of ranges) {
 			const result = findDefinitions(range);
+
 			if (result !== undefined) {
 				return result;
 			}
@@ -968,12 +1057,15 @@ export class GraphStore extends Database {
 		context: lsp.ReferenceContext,
 	): lsp.Location[] | undefined {
 		const ranges = this.findRange(this.toDatabase(uri), position);
+
 		if (ranges === undefined) {
 			return undefined;
 		}
 
 		const result: lsp.Location[] = [];
+
 		const monikers: Map<Id, Moniker> = new Map();
+
 		const dedupRanges = new Set<Id>();
 
 		const findReferences = (
@@ -986,6 +1078,7 @@ export class GraphStore extends Database {
 				range.id,
 				EdgeLabels.textDocument_references,
 			);
+
 			if (referenceResult === undefined) {
 				return undefined;
 			}
@@ -998,14 +1091,17 @@ export class GraphStore extends Database {
 				context,
 			);
 			this.findMonikersForVertex(monikers, anchorId);
+
 			for (const moniker of monikers.values()) {
 				if (moniker.kind === MonikerKind.local) {
 					continue;
 				}
 				const matchingMonikers = this.findMatchingMonikers(moniker);
+
 				for (const matchingMoniker of matchingMonikers) {
 					const vertexId =
 						this.findVertexIdForMoniker(matchingMoniker);
+
 					if (vertexId === undefined) {
 						continue;
 					}
@@ -1013,6 +1109,7 @@ export class GraphStore extends Database {
 						vertexId,
 						EdgeLabels.textDocument_references,
 					);
+
 					if (referenceResult === undefined) {
 						continue;
 					}
@@ -1045,10 +1142,12 @@ export class GraphStore extends Database {
 			this.findRangeFromReferenceResult.all({
 				id: referenceResult.id,
 			}) as LocationResultWithProperty[];
+
 		if (qr && qr.length > 0) {
 			const refLabel = this.getItemEdgeProperty(
 				ItemEdgeProperties.references,
 			);
+
 			for (const item of qr) {
 				if (
 					item.property === refLabel ||
@@ -1063,6 +1162,7 @@ export class GraphStore extends Database {
 		const mr: VertexResult[] = this.findCascadesFromReferenceResult.all({
 			id: referenceResult.id,
 		}) as VertexResult[];
+
 		if (mr) {
 			for (const moniker of mr) {
 				if (!monikers.has(moniker.id)) {
@@ -1077,6 +1177,7 @@ export class GraphStore extends Database {
 		const rqr: VertexResult[] = this.findResultFromReferenceResult.all({
 			id: referenceResult.id,
 		}) as VertexResult[];
+
 		if (rqr && rqr.length > 0) {
 			for (const item of rqr) {
 				this.resolveReferenceResult(
@@ -1092,33 +1193,42 @@ export class GraphStore extends Database {
 
 	private findMonikersForVertex(monikers: Map<Id, Moniker>, id: Id): void {
 		let currentId: Id = id;
+
 		let moniker: VertexResult | undefined;
+
 		do {
 			moniker = this.findMonikerStmt.get({ source: currentId }) as
 				| VertexResult
 				| undefined;
+
 			if (moniker !== undefined) {
 				break;
 			}
 			const previous: PreviousResult = this.findPreviousVertexStmt.get({
 				source: currentId,
 			}) as PreviousResult;
+
 			if (previous === undefined) {
 				moniker = undefined;
+
 				break;
 			}
 			currentId = previous.outV;
 		} while (currentId !== undefined);
+
 		if (moniker === undefined) {
 			return;
 		}
 		const result: Moniker[] = [this.decompress(JSON.parse(moniker.value))];
+
 		for (const moniker of result) {
 			monikers.set(moniker.id, moniker);
+
 			const attachedMonikersResult: VertexResult[] =
 				this.findAttachedMonikersStmt.all({
 					source: moniker.id,
 				}) as VertexResult[];
+
 			for (const attachedMonikerResult of attachedMonikersResult) {
 				const attachedMoniker: Moniker = this.decompress(
 					JSON.parse(attachedMonikerResult.value),
@@ -1134,6 +1244,7 @@ export class GraphStore extends Database {
 			scheme: moniker.scheme,
 			exclude: moniker.id,
 		}) as VertexResult[];
+
 		return results.map((vertex) =>
 			this.decompress(JSON.parse(vertex.value)),
 		);
@@ -1141,21 +1252,25 @@ export class GraphStore extends Database {
 
 	private findVertexIdForMoniker(moniker: Moniker): Id | undefined {
 		let currentId: Id = moniker.id;
+
 		do {
 			const next: NextResult = this.findNextMonikerStmt.get({
 				source: currentId,
 			}) as NextResult;
+
 			if (next === undefined) {
 				break;
 			}
 			currentId = next.inV;
 		} while (currentId !== undefined);
+
 		if (currentId === undefined) {
 			return;
 		}
 		const result: IdResult = this.findVertexIdForMonikerStmt.get({
 			id: currentId,
 		}) as IdResult;
+
 		return result !== undefined ? result.id : undefined;
 	}
 
@@ -1168,6 +1283,7 @@ export class GraphStore extends Database {
 			line: position.line,
 			character: position.character,
 		}) as RangeResult[];
+
 		if (dbResult === undefined || dbResult.length === 0) {
 			return undefined;
 		}
@@ -1181,12 +1297,16 @@ export class GraphStore extends Database {
 		}
 		// Do to the indecies we use the items in the db result are sorted descending.
 		const result: RangeResult[] = [];
+
 		const last = dbResult[dbResult.length - 1];
+
 		const belongsTo: Set<Id> = new Set();
 		result.push(last);
 		belongsTo.add(last.belongsTo);
+
 		for (let i = result.length - 2; i >= 0; i--) {
 			const candidate = dbResult[i];
+
 			if (
 				!belongsTo.has(candidate.belongsTo) &&
 				sameRange(last, candidate)
@@ -1217,24 +1337,30 @@ export class GraphStore extends Database {
 	): [ReferenceResult | undefined, Id];
 	private getResultForId(id: Id, label: EdgeLabels): [any | undefined, Id] {
 		let currentId = id;
+
 		let result: VertexResult | undefined;
+
 		do {
 			result = this.findResultStmt.get({
 				source: currentId,
 				label: this.getEdgeLabel(label),
 			}) as VertexResult | undefined;
+
 			if (result !== undefined) {
 				break;
 			}
 			const next: NextResult = this.findNextVertexStmt.get({
 				source: currentId,
 			}) as NextResult;
+
 			if (next === undefined) {
 				result = undefined;
+
 				break;
 			}
 			currentId = next.inV;
 		} while (currentId !== undefined);
+
 		if (result === undefined) {
 			return [undefined, currentId];
 		}
@@ -1246,6 +1372,7 @@ export class GraphStore extends Database {
 			return label;
 		}
 		let result = this.edgeLabels.get(label);
+
 		return result !== undefined ? result : label;
 	}
 
@@ -1256,15 +1383,20 @@ export class GraphStore extends Database {
 			return prop;
 		}
 		let result = this.itemEdgeProperties.get(prop);
+
 		return result !== undefined ? result : prop;
 	}
 
 	private asLocations(values: (Id | lsp.Location)[]): lsp.Location[] {
 		let mapping: Map<Id, number> = new Map();
+
 		let ids: Id[] = [];
+
 		let result: lsp.Location[] = new Array(values.length);
+
 		for (let i = 0; i < values.length; i++) {
 			let element = values[i];
+
 			if (lsp.Location.is(element)) {
 				result[i] = element;
 			} else {
@@ -1275,7 +1407,9 @@ export class GraphStore extends Database {
 		if (ids.length > 0) {
 			const locationRetriever = new LocationRetriever(this.db);
 			locationRetriever.addMany(ids);
+
 			let data: LocationResult[] = locationRetriever.run();
+
 			for (let element of data) {
 				result[mapping.get(element.id)!] = this.createLocation(element);
 			}
@@ -1289,7 +1423,9 @@ export class GraphStore extends Database {
 		} else {
 			const locationRetriever = new LocationRetriever(this.db, 1);
 			locationRetriever.add(value);
+
 			let data: LocationResult = locationRetriever.run()[0];
+
 			return this.createLocation(data);
 		}
 	}
@@ -1322,6 +1458,7 @@ export class GraphStore extends Database {
 			uri,
 			label: this.getEdgeLabel(label),
 		}) as DocumentResult;
+
 		if (data === undefined) {
 			return undefined;
 		}
@@ -1331,6 +1468,7 @@ export class GraphStore extends Database {
 	private decompress(value: any): any {
 		if (Array.isArray(value)) {
 			let decompressor = Decompressor.get(value[0]);
+
 			if (decompressor) {
 				return decompressor.decompress(value);
 			}

@@ -76,9 +76,11 @@ class Transformer implements UriTransformer {
 	public toDatabase(uri: string): string {
 		if (uri.startsWith(this.lsif)) {
 			let p = uri.substring(this.lsif.length);
+
 			return `${this.workspaceRoot}${p}`;
 		} else {
 			let parsed = URI.parse(uri);
+
 			if (parsed.scheme === LSIF_SCHEME && parsed.query) {
 				return parsed
 					.with({ scheme: "file", query: "" })
@@ -91,9 +93,11 @@ class Transformer implements UriTransformer {
 	public fromDatabase(uri: string): string {
 		if (uri.startsWith(this.workspaceRoot)) {
 			let p = uri.substring(this.workspaceRoot.length);
+
 			return `${this.lsif}${p}`;
 		} else {
 			let file = URI.parse(uri);
+
 			return file
 				.with({ scheme: LSIF_SCHEME, query: this.lsif })
 				.toString(true);
@@ -102,10 +106,12 @@ class Transformer implements UriTransformer {
 }
 
 const workspaceFolders: Map<string, WorkspaceFolder> = new Map();
+
 let _sortedDatabaseKeys: string[] | undefined;
 function sortedDatabaseKeys(): string[] {
 	if (_sortedDatabaseKeys === undefined) {
 		_sortedDatabaseKeys = [];
+
 		for (let key of databases.keys()) {
 			_sortedDatabaseKeys.push(key);
 		}
@@ -125,15 +131,22 @@ async function createDatabase(
 	folder: WorkspaceFolder,
 ): Promise<Database | undefined> {
 	let uri: URI = URI.parse(folder.uri);
+
 	const fsPath = uri.fsPath;
+
 	const extName = path.extname(fsPath);
+
 	if (fs.existsSync(fsPath)) {
 		try {
 			let database: Database | undefined;
+
 			if (extName === ".db") {
 				const Sqlite = await import("better-sqlite3");
+
 				const db = new Sqlite(fsPath, { readonly: true });
+
 				let format = "graph";
+
 				try {
 					format = (db.prepare("Select * from format f").get() as any)
 						.format;
@@ -162,6 +175,7 @@ async function createDatabase(
 						return database!;
 					});
 				databases.set(getDatabaseKey(folder.uri), promise);
+
 				return promise;
 			}
 		} catch (error) {
@@ -173,7 +187,9 @@ async function createDatabase(
 
 function findDatabase(uri: string): Promise<Database> | undefined {
 	let sorted = sortedDatabaseKeys();
+
 	let parsed = URI.parse(uri);
+
 	if (parsed.query) {
 		// The LSIF URIs are encoded.
 		uri = URI.parse(parsed.query).toString();
@@ -198,12 +214,14 @@ async function checkRegistrations(): Promise<void> {
 				connection.console.error("Failed to unregister listeners."),
 		);
 		registrations = undefined;
+
 		return;
 	}
 	if (databases.size >= 1 && registrations === undefined) {
 		let documentSelector: DocumentSelector = [
 			{ scheme: "lsif", exclusive: true } as DocumentFilter,
 		];
+
 		let toRegister: BulkRegistration = BulkRegistration.create();
 		toRegister.add(DocumentSymbolRequest.type, {
 			documentSelector,
@@ -249,6 +267,7 @@ connection.onInitialized(async () => {
 	try {
 		for (let folder of workspaceFolders.values()) {
 			const uri: URI = URI.parse(folder.uri);
+
 			if (uri.scheme === LSIF_SCHEME) {
 				try {
 					await createDatabase(folder);
@@ -265,9 +284,12 @@ connection.onInitialized(async () => {
 	connection.workspace.onDidChangeWorkspaceFolders(async (event) => {
 		for (let removed of event.removed) {
 			const uri: URI = URI.parse(removed.uri);
+
 			if (uri.scheme === LSIF_SCHEME) {
 				const dbKey = getDatabaseKey(removed.uri);
+
 				const promise = databases.get(dbKey);
+
 				if (promise) {
 					promise.then((database) => {
 						try {
@@ -281,6 +303,7 @@ connection.onInitialized(async () => {
 		}
 		for (let added of event.added) {
 			const uri: URI = URI.parse(added.uri);
+
 			if (uri.scheme === LSIF_SCHEME) {
 				await createDatabase(added);
 			}
@@ -303,82 +326,100 @@ connection.onShutdown(() => {
 
 connection.onRequest(StatFileRequest.type, async (params) => {
 	let promise = findDatabase(params.uri);
+
 	if (promise === undefined) {
 		return null;
 	}
 	let database = await promise;
+
 	return database.stat(params.uri);
 });
 
 connection.onRequest(ReadDirectoryRequest.type, async (params) => {
 	let promise = findDatabase(params.uri);
+
 	if (promise === undefined) {
 		return [];
 	}
 	let database = await promise;
+
 	return database.readDirectory(params.uri);
 });
 
 connection.onRequest(ReadFileRequest.type, async (params) => {
 	let promise = findDatabase(params.uri);
+
 	if (promise === undefined) {
 		return null;
 	}
 	let database = await promise;
+
 	return database.readFileContent(params.uri);
 });
 
 connection.onDocumentSymbol(async (params) => {
 	let promise = findDatabase(params.textDocument.uri);
+
 	if (promise === undefined) {
 		return null;
 	}
 	let database = await promise;
+
 	return database.documentSymbols(params.textDocument.uri);
 });
 
 connection.onFoldingRanges(async (params) => {
 	let promise = findDatabase(params.textDocument.uri);
+
 	if (promise === undefined) {
 		return null;
 	}
 	let database = await promise;
+
 	return database.foldingRanges(params.textDocument.uri);
 });
 
 connection.onHover(async (params) => {
 	let promise = findDatabase(params.textDocument.uri);
+
 	if (promise === undefined) {
 		return null;
 	}
 	let database = await promise;
+
 	return database.hover(params.textDocument.uri, params.position);
 });
 
 connection.onDeclaration(async (params) => {
 	let promise = findDatabase(params.textDocument.uri);
+
 	if (promise === undefined) {
 		return null;
 	}
 	let database = await promise;
+
 	return database.declarations(params.textDocument.uri, params.position);
 });
 
 connection.onDefinition(async (params) => {
 	let promise = findDatabase(params.textDocument.uri);
+
 	if (promise === undefined) {
 		return null;
 	}
 	let database = await promise;
+
 	return database.definitions(params.textDocument.uri, params.position);
 });
 
 connection.onReferences(async (params) => {
 	let promise = findDatabase(params.textDocument.uri);
+
 	if (promise === undefined) {
 		return null;
 	}
 	let database = await promise;
+
 	return database.references(
 		params.textDocument.uri,
 		params.position,
