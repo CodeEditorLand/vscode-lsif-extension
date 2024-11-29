@@ -10,6 +10,7 @@ import { DocumentInfo, FileStat, FileSystem, FileType } from "./files";
 
 export interface UriTransformer {
 	toDatabase(uri: string): string;
+
 	fromDatabase(uri: string): string;
 }
 
@@ -20,6 +21,7 @@ export const noopTransformer: UriTransformer = {
 
 export abstract class Database {
 	private fileSystem!: FileSystem;
+
 	private uriTransformer!: UriTransformer;
 
 	protected constructor() {}
@@ -28,9 +30,11 @@ export abstract class Database {
 		transformerFactory: (workspaceRoot: string) => UriTransformer,
 	): void {
 		const workspaceRoot = this.getWorkspaceRoot().toString(true);
+
 		this.uriTransformer = transformerFactory
 			? transformerFactory(workspaceRoot)
 			: noopTransformer;
+
 		this.fileSystem = new FileSystem(
 			workspaceRoot,
 			this.getDocumentInfos(),
@@ -56,11 +60,13 @@ export abstract class Database {
 		if (result !== null) {
 			return result;
 		}
+
 		let id = this.findFile(transformed);
 
 		if (id === undefined) {
 			return null;
 		}
+
 		return FileStat.createFile();
 	}
 
@@ -78,14 +84,17 @@ export abstract class Database {
 		if (info === undefined) {
 			info = this.findFile(transformed);
 		}
+
 		if (info === undefined) {
 			return null;
 		}
+
 		let result = this.fileContent(info);
 
 		if (result === undefined) {
 			return null;
 		}
+
 		return result;
 	}
 
@@ -95,6 +104,7 @@ export abstract class Database {
 
 	protected abstract fileContent(info: {
 		id: Id;
+
 		hash: string | undefined;
 	}): string | undefined;
 
@@ -134,6 +144,7 @@ export abstract class Database {
 		) {
 			return undefined;
 		}
+
 		return lsp.DocumentSymbol.create(
 			tag.text,
 			tag.detail || "",

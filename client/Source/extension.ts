@@ -41,9 +41,11 @@ export function activate(context: ExtensionContext) {
 				if (values === undefined || values.length === 0) {
 					return;
 				}
+
 				let toAdd = values.map((uri) => {
 					return { uri: uri.with({ scheme: "lsif" }) };
 				});
+
 				workspace.updateWorkspaceFolders(
 					workspace.workspaceFolders
 						? workspace.workspaceFolders.length
@@ -103,6 +105,7 @@ export function deactivate(): Thenable<void> | undefined {
 	if (!client) {
 		return undefined;
 	}
+
 	return client.stop();
 }
 
@@ -120,8 +123,11 @@ type FileType = 0 | 1 | 2 | 64;
 
 interface FileStat {
 	type: FileType;
+
 	ctime: number;
+
 	mtime: number;
+
 	size: number;
 }
 
@@ -161,11 +167,14 @@ class LsifFS implements FileSystemProvider {
 	private readonly client: Promise<LanguageClient>;
 
 	private readonly emitter: EventEmitter<FileChangeEvent[]>;
+
 	public readonly onDidChangeFile: Event<FileChangeEvent[]>;
 
 	public constructor(client: Promise<LanguageClient>) {
 		this.client = client;
+
 		this.emitter = new EventEmitter<FileChangeEvent[]>();
+
 		this.onDidChangeFile = this.emitter.event;
 	}
 
@@ -189,6 +198,7 @@ class LsifFS implements FileSystemProvider {
 					if (!value) {
 						throw FileSystemError.FileNotFound(uri);
 					}
+
 					return value;
 				},
 				(error) => {

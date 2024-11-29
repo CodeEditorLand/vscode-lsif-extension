@@ -48,9 +48,11 @@ interface Moniker extends PMoniker {
 
 interface Vertices {
 	all: Map<Id, Vertex>;
+
 	projects: Map<Id, Project>;
 
 	documents: Map<Id, Document>;
+
 	ranges: Map<Id, Range>;
 }
 
@@ -64,30 +66,43 @@ type ItemTarget =
 
 interface Out {
 	contains: Map<Id, Document[] | Range[]>;
+
 	item: Map<Id, ItemTarget[]>;
+
 	next: Map<Id, Vertex>;
+
 	moniker: Map<Id, Moniker>;
 
 	documentSymbol: Map<Id, DocumentSymbolResult>;
+
 	foldingRange: Map<Id, FoldingRangeResult>;
 
 	documentLink: Map<Id, DocumentLinkResult>;
+
 	diagnostic: Map<Id, DiagnosticResult>;
+
 	declaration: Map<Id, DeclarationResult>;
+
 	definition: Map<Id, DefinitionResult>;
+
 	typeDefinition: Map<Id, TypeDefinitionResult>;
+
 	hover: Map<Id, HoverResult>;
+
 	references: Map<Id, ReferenceResult>;
+
 	implementation: Map<Id, ImplementationResult>;
 }
 
 interface In {
 	contains: Map<Id, Project | Document>;
+
 	moniker: Map<Id, Vertex[]>;
 }
 
 interface Indices {
 	monikers: Map<string, Moniker[]>;
+
 	contents: Map<string, string>;
 
 	documents: Map<string, { hash: string; documents: Document[] }>;
@@ -95,6 +110,7 @@ interface Indices {
 
 interface ResultPath<T> {
 	path: { vertex: Id; moniker: Moniker | undefined }[];
+
 	result: { value: T; moniker: Moniker | undefined } | undefined;
 }
 
@@ -123,17 +139,24 @@ namespace Locations {
 
 export class JsonStore extends Database {
 	private version: string | undefined;
+
 	private workspaceRoot!: URI;
+
 	private activeGroup: Id | undefined;
+
 	private activeProject: Id | undefined;
 
 	private vertices: Vertices;
+
 	private indices: Indices;
+
 	private out: Out;
+
 	private in: In;
 
 	constructor() {
 		super();
+
 		this.vertices = {
 			all: new Map(),
 			projects: new Map(),
@@ -178,13 +201,16 @@ export class JsonStore extends Database {
 			const input: fs.ReadStream = fs.createReadStream(file, {
 				encoding: "utf8",
 			});
+
 			input.on("error", reject);
 
 			const rd = readline.createInterface(input);
+
 			rd.on("line", (line: string) => {
 				if (!line || line.length === 0) {
 					return;
 				}
+
 				try {
 					const element: Edge | Vertex = JSON.parse(line);
 
@@ -201,15 +227,18 @@ export class JsonStore extends Database {
 					}
 				} catch (error) {
 					input.destroy();
+
 					reject(error);
 				}
 			});
+
 			rd.on("close", () => {
 				if (this.workspaceRoot === undefined) {
 					reject(new Error("No project root provided."));
 
 					return;
 				}
+
 				if (this.version === undefined) {
 					reject(new Error("No version found."));
 
@@ -226,9 +255,11 @@ export class JsonStore extends Database {
 
 						return;
 					}
+
 					const range: SemVer.Range = new SemVer.Range(
 						">0.5.99 <=0.6.0-next.4",
 					);
+
 					range.includePrerelease = true;
 
 					if (!SemVer.satisfies(semVer, range)) {
@@ -241,6 +272,7 @@ export class JsonStore extends Database {
 						return;
 					}
 				}
+
 				resolve();
 			});
 		}).then(() => {
@@ -282,6 +314,7 @@ export class JsonStore extends Database {
 							break;
 					}
 				}
+
 				break;
 
 			case VertexLabels.document:
@@ -307,10 +340,13 @@ export class JsonStore extends Database {
 
 					if (values === undefined) {
 						values = [];
+
 						this.indices.monikers.set(key, values);
 					}
+
 					values.push(vertex as Moniker);
 				}
+
 				break;
 
 			case VertexLabels.range:
@@ -325,20 +361,25 @@ export class JsonStore extends Database {
 			document.contents !== undefined
 				? document.contents
 				: "No content provided.";
+
 		this.vertices.documents.set(document.id, document);
 
 		const hash = crypto.createHash("md5").update(contents).digest("base64");
+
 		this.indices.contents.set(hash, contents);
 
 		let value = this.indices.documents.get(document.uri);
 
 		if (value === undefined) {
 			value = { hash, documents: [] };
+
 			this.indices.documents.set(document.uri, value);
 		}
+
 		if (hash !== value.hash) {
 			console.error(`Document ${document.uri} has different content.`);
 		}
+
 		value.documents.push(document);
 	}
 
@@ -348,6 +389,7 @@ export class JsonStore extends Database {
 		if (edge.label === "item") {
 			property = edge.property;
 		}
+
 		if (Edge.is11(edge)) {
 			this.doProcessEdge(edge.label, edge.outV, edge.inV, property);
 		} else if (Edge.is1N(edge)) {
@@ -370,9 +412,11 @@ export class JsonStore extends Database {
 		if (from === undefined) {
 			throw new Error(`No vertex found for Id ${outV}`);
 		}
+
 		if (to === undefined) {
 			throw new Error(`No vertex found for Id ${inV}`);
 		}
+
 		let values: any[] | undefined;
 
 		switch (label) {
@@ -381,10 +425,12 @@ export class JsonStore extends Database {
 
 				if (values === undefined) {
 					values = [to as any];
+
 					this.out.contains.set(from.id, values);
 				} else {
 					values.push(to);
 				}
+
 				this.in.contains.set(to.id, from as any);
 
 				break;
@@ -428,14 +474,17 @@ export class JsonStore extends Database {
 				} else {
 					itemTarget = to as Range;
 				}
+
 				if (itemTarget !== undefined) {
 					if (values === undefined) {
 						values = [itemTarget];
+
 						this.out.item.set(from.id, values);
 					} else {
 						values.push(itemTarget);
 					}
 				}
+
 				break;
 
 			case EdgeLabels.next:
@@ -445,12 +494,15 @@ export class JsonStore extends Database {
 
 			case EdgeLabels.moniker:
 				this.out.moniker.set(from.id, to as Moniker);
+
 				values = this.in.moniker.get(to.id);
 
 				if (values === undefined) {
 					values = [];
+
 					this.in.moniker.set(to.id, values);
 				}
+
 				values.push(from);
 
 				break;
@@ -505,6 +557,7 @@ export class JsonStore extends Database {
 
 	public getDocumentInfos(): DocumentInfo[] {
 		const result: DocumentInfo[] = [];
+
 		this.indices.documents.forEach((value, key) => {
 			// We take the id of the first document.
 			result.push({
@@ -523,6 +576,7 @@ export class JsonStore extends Database {
 		if (result === undefined) {
 			return undefined;
 		}
+
 		return { id: result.documents[0].id, hash: result.hash };
 	}
 
@@ -545,11 +599,13 @@ export class JsonStore extends Database {
 		if (foldingRangeResult === undefined) {
 			return undefined;
 		}
+
 		let result: lsp.FoldingRange[] = [];
 
 		for (let item of foldingRangeResult.result) {
 			result.push(Object.assign(Object.create(null), item));
 		}
+
 		return result;
 	}
 
@@ -571,6 +627,7 @@ export class JsonStore extends Database {
 		) {
 			return undefined;
 		}
+
 		let first = documentSymbolResult.result[0];
 
 		let result: lsp.DocumentSymbol[] = [];
@@ -588,6 +645,7 @@ export class JsonStore extends Database {
 				}
 			}
 		}
+
 		return result;
 	}
 
@@ -604,6 +662,7 @@ export class JsonStore extends Database {
 		) {
 			return undefined;
 		}
+
 		let result: lsp.DocumentSymbol = lsp.DocumentSymbol.create(
 			tag.text,
 			tag.detail || "",
@@ -623,6 +682,7 @@ export class JsonStore extends Database {
 				}
 			}
 		}
+
 		return result;
 	}
 
@@ -696,6 +756,7 @@ export class JsonStore extends Database {
 			if (ranges === undefined) {
 				return undefined;
 			}
+
 			for (const element of ranges) {
 				this.addLocation(result, element, dedupLocations);
 			}
@@ -724,6 +785,7 @@ export class JsonStore extends Database {
 				if (dedupMonikers.has(moniker.key)) {
 					continue;
 				}
+
 				dedupMonikers.add(moniker.key);
 
 				const matchingMonikers = this.indices.monikers.get(moniker.key);
@@ -743,6 +805,7 @@ export class JsonStore extends Database {
 								if (resultPath.result === undefined) {
 									continue;
 								}
+
 								resolveTargets(
 									result,
 									dedupLocations,
@@ -764,6 +827,7 @@ export class JsonStore extends Database {
 		for (const range of ranges) {
 			_findTargets(result, dedupLocations, dedupMonikers, range);
 		}
+
 		return result;
 	}
 
@@ -795,10 +859,12 @@ export class JsonStore extends Database {
 			if (resultPath.result === undefined) {
 				return;
 			}
+
 			const mostSpecificMoniker = this.getMostSpecificMoniker(resultPath);
 
 			const monikers: Moniker[] =
 				mostSpecificMoniker !== undefined ? [mostSpecificMoniker] : [];
+
 			this.resolveReferenceResult(
 				result,
 				dedupLocations,
@@ -811,6 +877,7 @@ export class JsonStore extends Database {
 				if (dedupMonikers.has(moniker.key)) {
 					continue;
 				}
+
 				dedupMonikers.add(moniker.key);
 
 				const matchingMonikers = this.indices.monikers.get(moniker.key);
@@ -820,6 +887,7 @@ export class JsonStore extends Database {
 						if (moniker.id === matchingMoniker.id) {
 							continue;
 						}
+
 						const vertices =
 							this.findVerticesForMoniker(matchingMoniker);
 
@@ -833,6 +901,7 @@ export class JsonStore extends Database {
 								if (resultPath.result === undefined) {
 									continue;
 								}
+
 								this.resolveReferenceResult(
 									result,
 									dedupLocations,
@@ -876,6 +945,7 @@ export class JsonStore extends Database {
 
 				return result;
 			}
+
 			result.path.push({ vertex: currentId, moniker });
 
 			const next = this.out.next.get(currentId);
@@ -883,6 +953,7 @@ export class JsonStore extends Database {
 			if (next === undefined) {
 				return result;
 			}
+
 			currentId = next.id;
 		} while (true);
 	}
@@ -893,11 +964,13 @@ export class JsonStore extends Database {
 		if (result.result?.moniker !== undefined) {
 			return result.result.moniker;
 		}
+
 		for (let i = result.path.length - 1; i >= 0; i--) {
 			if (result.path[i].moniker !== undefined) {
 				return result.path[i].moniker;
 			}
 		}
+
 		return undefined;
 	}
 
@@ -917,6 +990,7 @@ export class JsonStore extends Database {
 		if (targets === undefined) {
 			return undefined;
 		}
+
 		for (let target of targets) {
 			if (
 				target.type === ItemEdgeProperties.declarations &&
@@ -945,7 +1019,9 @@ export class JsonStore extends Database {
 	}
 
 	private item(value: DefinitionResult | DeclarationResult): Range[];
+
 	private item(value: ReferenceResult): ItemTarget[];
+
 	private item(
 		value: DeclarationResult | DefinitionResult | ReferenceResult,
 	): Range[] | ItemTarget[] | undefined {
@@ -971,15 +1047,18 @@ export class JsonStore extends Database {
 			location = value;
 		} else {
 			let document = this.in.contains.get(value.id)!;
+
 			location = lsp.Location.create(
 				this.fromDatabase((document as Document).uri),
 				this.asRange(value),
 			);
 		}
+
 		const key = Locations.makeKey(location);
 
 		if (!dedup.has(key)) {
 			dedup.add(key);
+
 			result.push(location);
 		}
 	}
@@ -993,6 +1072,7 @@ export class JsonStore extends Database {
 		if (value === undefined) {
 			return undefined;
 		}
+
 		let result: Range[] = [];
 
 		for (const document of value.documents) {
@@ -1010,6 +1090,7 @@ export class JsonStore extends Database {
 				if (item.label !== VertexLabels.range) {
 					continue;
 				}
+
 				if (JsonStore.containsPosition(item, position)) {
 					if (!candidate) {
 						candidate = item;
@@ -1020,10 +1101,12 @@ export class JsonStore extends Database {
 					}
 				}
 			}
+
 			if (candidate !== undefined) {
 				result.push(candidate);
 			}
 		}
+
 		return result.length > 0 ? result : undefined;
 	}
 
@@ -1050,18 +1133,21 @@ export class JsonStore extends Database {
 		) {
 			return false;
 		}
+
 		if (
 			position.line === range.start.line &&
 			position.character < range.start.character
 		) {
 			return false;
 		}
+
 		if (
 			position.line === range.end.line &&
 			position.character > range.end.character
 		) {
 			return false;
 		}
+
 		return true;
 	}
 
@@ -1078,24 +1164,28 @@ export class JsonStore extends Database {
 		) {
 			return false;
 		}
+
 		if (
 			otherRange.start.line > range.end.line ||
 			otherRange.end.line > range.end.line
 		) {
 			return false;
 		}
+
 		if (
 			otherRange.start.line === range.start.line &&
 			otherRange.start.character < range.start.character
 		) {
 			return false;
 		}
+
 		if (
 			otherRange.end.line === range.end.line &&
 			otherRange.end.character > range.end.character
 		) {
 			return false;
 		}
+
 		return true;
 	}
 }

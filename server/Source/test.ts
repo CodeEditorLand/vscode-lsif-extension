@@ -18,4 +18,5 @@ db.load("jsonrpc.db", () => noopTransformer);
 let symbols = db.documentSymbols(
 	"file:///c:/Users/dirkb/Projects/mseng/LanguageServer/Node/jsonrpc/src/events.ts",
 );
+
 console.log(JSON.stringify(symbols));

@@ -67,12 +67,15 @@ let connection = createConnection(ProposedFeatures.all);
 
 class Transformer implements UriTransformer {
 	private lsif: string;
+
 	private workspaceRoot: string;
 
 	constructor(lsif: URI, workspaceRoot: string) {
 		this.lsif = lsif.toString();
+
 		this.workspaceRoot = workspaceRoot;
 	}
+
 	public toDatabase(uri: string): string {
 		if (uri.startsWith(this.lsif)) {
 			let p = uri.substring(this.lsif.length);
@@ -90,6 +93,7 @@ class Transformer implements UriTransformer {
 			}
 		}
 	}
+
 	public fromDatabase(uri: string): string {
 		if (uri.startsWith(this.workspaceRoot)) {
 			let p = uri.substring(this.workspaceRoot.length);
@@ -115,10 +119,12 @@ function sortedDatabaseKeys(): string[] {
 		for (let key of databases.keys()) {
 			_sortedDatabaseKeys.push(key);
 		}
+
 		_sortedDatabaseKeys.sort((a, b) => {
 			return a.length - b.length;
 		});
 	}
+
 	return _sortedDatabaseKeys;
 }
 
@@ -155,17 +161,22 @@ async function createDatabase(
 				} finally {
 					db.close();
 				}
+
 				if (format === "blob") {
 					const module = await import("./blobStore");
+
 					database = new module.BlobStore();
 				} else {
 					const module = await import("./graphStore");
+
 					database = new module.GraphStore();
 				}
 			} else if (extName === ".lsif") {
 				const module = await import("./jsonStore");
+
 				database = new module.JsonStore();
 			}
+
 			if (database !== undefined) {
 				let promise = database
 					.load(fsPath, (workspaceRoot: string) => {
@@ -174,6 +185,7 @@ async function createDatabase(
 					.then(() => {
 						return database!;
 					});
+
 				databases.set(getDatabaseKey(folder.uri), promise);
 
 				return promise;
@@ -182,6 +194,7 @@ async function createDatabase(
 			throw error;
 		}
 	}
+
 	return Promise.reject(new Error(`Can't create database for ${folder.uri}`));
 }
 
@@ -194,14 +207,17 @@ function findDatabase(uri: string): Promise<Database> | undefined {
 		// The LSIF URIs are encoded.
 		uri = URI.parse(parsed.query).toString();
 	}
+
 	if (uri.charAt(uri.length - 1) !== "/") {
 		uri = uri + "/";
 	}
+
 	for (let element of sorted) {
 		if (uri.startsWith(element)) {
 			return databases.get(element);
 		}
 	}
+
 	return undefined;
 }
 
@@ -213,34 +229,43 @@ async function checkRegistrations(): Promise<void> {
 			(error) =>
 				connection.console.error("Failed to unregister listeners."),
 		);
+
 		registrations = undefined;
 
 		return;
 	}
+
 	if (databases.size >= 1 && registrations === undefined) {
 		let documentSelector: DocumentSelector = [
 			{ scheme: "lsif", exclusive: true } as DocumentFilter,
 		];
 
 		let toRegister: BulkRegistration = BulkRegistration.create();
+
 		toRegister.add(DocumentSymbolRequest.type, {
 			documentSelector,
 		});
+
 		toRegister.add(FoldingRangeRequest.type, {
 			documentSelector,
 		});
+
 		toRegister.add(DefinitionRequest.type, {
 			documentSelector,
 		});
+
 		toRegister.add(DeclarationRequest.type, {
 			documentSelector,
 		});
+
 		toRegister.add(HoverRequest.type, {
 			documentSelector,
 		});
+
 		toRegister.add(ReferencesRequest.type, {
 			documentSelector,
 		});
+
 		registrations = connection.client.register(toRegister);
 	}
 }
@@ -251,6 +276,7 @@ connection.onInitialize((params: InitializeParams) => {
 			workspaceFolders.set(folder.uri, folder);
 		}
 	}
+
 	return {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.None,
@@ -278,6 +304,7 @@ connection.onInitialized(async () => {
 		}
 	} finally {
 		_sortedDatabaseKeys = undefined;
+
 		checkRegistrations();
 	}
 	// handle updates.
@@ -301,6 +328,7 @@ connection.onInitialized(async () => {
 				}
 			}
 		}
+
 		for (let added of event.added) {
 			const uri: URI = URI.parse(added.uri);
 
@@ -308,7 +336,9 @@ connection.onInitialized(async () => {
 				await createDatabase(added);
 			}
 		}
+
 		_sortedDatabaseKeys = undefined;
+
 		checkRegistrations();
 	});
 });
@@ -320,6 +350,7 @@ connection.onShutdown(() => {
 		}
 	} finally {
 		_sortedDatabaseKeys = undefined;
+
 		databases.clear();
 	}
 });
@@ -330,6 +361,7 @@ connection.onRequest(StatFileRequest.type, async (params) => {
 	if (promise === undefined) {
 		return null;
 	}
+
 	let database = await promise;
 
 	return database.stat(params.uri);
@@ -341,6 +373,7 @@ connection.onRequest(ReadDirectoryRequest.type, async (params) => {
 	if (promise === undefined) {
 		return [];
 	}
+
 	let database = await promise;
 
 	return database.readDirectory(params.uri);
@@ -352,6 +385,7 @@ connection.onRequest(ReadFileRequest.type, async (params) => {
 	if (promise === undefined) {
 		return null;
 	}
+
 	let database = await promise;
 
 	return database.readFileContent(params.uri);
@@ -363,6 +397,7 @@ connection.onDocumentSymbol(async (params) => {
 	if (promise === undefined) {
 		return null;
 	}
+
 	let database = await promise;
 
 	return database.documentSymbols(params.textDocument.uri);
@@ -374,6 +409,7 @@ connection.onFoldingRanges(async (params) => {
 	if (promise === undefined) {
 		return null;
 	}
+
 	let database = await promise;
 
 	return database.foldingRanges(params.textDocument.uri);
@@ -385,6 +421,7 @@ connection.onHover(async (params) => {
 	if (promise === undefined) {
 		return null;
 	}
+
 	let database = await promise;
 
 	return database.hover(params.textDocument.uri, params.position);
@@ -396,6 +433,7 @@ connection.onDeclaration(async (params) => {
 	if (promise === undefined) {
 		return null;
 	}
+
 	let database = await promise;
 
 	return database.declarations(params.textDocument.uri, params.position);
@@ -407,6 +445,7 @@ connection.onDefinition(async (params) => {
 	if (promise === undefined) {
 		return null;
 	}
+
 	let database = await promise;
 
 	return database.definitions(params.textDocument.uri, params.position);
@@ -418,6 +457,7 @@ connection.onReferences(async (params) => {
 	if (promise === undefined) {
 		return null;
 	}
+
 	let database = await promise;
 
 	return database.references(

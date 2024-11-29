@@ -19,6 +19,7 @@ import { DocumentInfo } from "./files";
 
 interface MetaDataResult {
 	id: number;
+
 	value: string;
 }
 
@@ -29,19 +30,29 @@ interface LiteralMap<T> {
 
 interface RangeData extends Pick<Range, "start" | "end" | "tag"> {
 	moniker?: Id;
+
 	next?: Id;
+
 	hoverResult?: Id;
+
 	declarationResult?: Id;
+
 	definitionResult?: Id;
+
 	referenceResult?: Id;
 }
 
 interface ResultSetData {
 	moniker?: Id;
+
 	next?: Id;
+
 	hoverResult?: Id;
+
 	declarationResult?: Id;
+
 	definitionResult?: Id;
+
 	referenceResult?: Id;
 }
 
@@ -55,7 +66,9 @@ interface DefinitionResultData {
 
 interface ReferenceResultData {
 	declarations?: Id[];
+
 	definitions?: Id[];
+
 	references?: Id[];
 }
 
@@ -63,21 +76,31 @@ type MonikerData = Pick<Moniker, "scheme" | "identifier" | "kind">;
 
 interface DocumentBlob {
 	contents: string;
+
 	ranges: LiteralMap<RangeData>;
+
 	resultSets?: LiteralMap<ResultSetData>;
+
 	monikers?: LiteralMap<MonikerData>;
+
 	hovers?: LiteralMap<lsp.Hover>;
+
 	declarationResults?: LiteralMap<DeclarationResultData>;
+
 	definitionResults?: LiteralMap<DefinitionResultData>;
+
 	referenceResults?: LiteralMap<ReferenceResultData>;
+
 	foldingRanges?: lsp.FoldingRange[];
 
 	documentSymbols?: lsp.DocumentSymbol[] | RangeBasedDocumentSymbol[];
+
 	diagnostics?: lsp.Diagnostic[];
 }
 
 interface DocumentsResult {
 	documentHash: string;
+
 	uri: string;
 }
 
@@ -93,26 +116,39 @@ interface DocumentResult {
 
 interface DefsResult {
 	uri: string;
+
 	startLine: number;
+
 	startCharacter: number;
+
 	endLine: number;
+
 	endCharacter: number;
 }
 
 interface DeclsResult {
 	uri: string;
+
 	startLine: number;
+
 	startCharacter: number;
+
 	endLine: number;
+
 	endCharacter: number;
 }
 
 interface RefsResult {
 	uri: string;
+
 	kind: number;
+
 	startLine: number;
+
 	startCharacter: number;
+
 	endLine: number;
+
 	endCharacter: number;
 }
 
@@ -120,20 +156,30 @@ export class BlobStore extends Database {
 	private db!: Sqlite.Database;
 
 	private allDocumentsStmt!: Sqlite.Statement;
+
 	private findDocumentStmt!: Sqlite.Statement;
+
 	private findBlobStmt!: Sqlite.Statement;
+
 	private findDeclsStmt!: Sqlite.Statement;
+
 	private findDefsStmt!: Sqlite.Statement;
+
 	private findRefsStmt!: Sqlite.Statement;
+
 	private findHoverStmt!: Sqlite.Statement;
 
 	private version!: string;
+
 	private workspaceRoot!: URI;
+
 	private blobs: Map<Id, DocumentBlob>;
 
 	public constructor() {
 		super();
+
 		this.version;
+
 		this.blobs = new Map();
 	}
 
@@ -142,6 +188,7 @@ export class BlobStore extends Database {
 		transformerFactory: (workspaceRoot: string) => UriTransformer,
 	): Promise<void> {
 		this.db = new Sqlite(file, { readonly: true });
+
 		this.readMetaData();
 		/* eslint-disable indent */
 		this.allDocumentsStmt = this.db.prepare(
@@ -151,6 +198,7 @@ export class BlobStore extends Database {
 				"Where v.version = ?",
 			].join(" "),
 		);
+
 		this.findDocumentStmt = this.db.prepare(
 			[
 				"Select d.documentHash From documents d",
@@ -158,9 +206,11 @@ export class BlobStore extends Database {
 				"Where v.version = $version and d.uri = $uri",
 			].join(" "),
 		);
+
 		this.findBlobStmt = this.db.prepare(
 			"Select content From blobs Where hash = ?",
 		);
+
 		this.findDeclsStmt = this.db.prepare(
 			[
 				"Select doc.uri, d.startLine, d.startCharacter, d.endLine, d.endCharacter From decls d",
@@ -169,6 +219,7 @@ export class BlobStore extends Database {
 				"Where v.version = $version and d.scheme = $scheme and d.identifier = $identifier",
 			].join(" "),
 		);
+
 		this.findDefsStmt = this.db.prepare(
 			[
 				"Select doc.uri, d.startLine, d.startCharacter, d.endLine, d.endCharacter From defs d",
@@ -177,6 +228,7 @@ export class BlobStore extends Database {
 				"Where v.version = $version and d.scheme = $scheme and d.identifier = $identifier",
 			].join(" "),
 		);
+
 		this.findRefsStmt = this.db.prepare(
 			[
 				"Select doc.uri, r.kind, r.startLine, r.startCharacter, r.endLine, r.endCharacter From refs r",
@@ -185,6 +237,7 @@ export class BlobStore extends Database {
 				"Where v.version = $version and r.scheme = $scheme and r.identifier = $identifier",
 			].join(" "),
 		);
+
 		this.findHoverStmt = this.db.prepare(
 			[
 				"Select b.content From blobs b",
@@ -203,6 +256,7 @@ export class BlobStore extends Database {
 		if (typeof this.version !== "string") {
 			throw new Error("Version tag must be a string");
 		}
+
 		this.initialize(transformerFactory);
 
 		return Promise.resolve();
@@ -216,6 +270,7 @@ export class BlobStore extends Database {
 		if (result === undefined || result.length !== 1) {
 			throw new Error("Failed to read meta data record.");
 		}
+
 		let metaData: MetaData = JSON.parse(result[0].value);
 	}
 
@@ -235,6 +290,7 @@ export class BlobStore extends Database {
 		if (result === undefined) {
 			return [];
 		}
+
 		return result.map((item) => {
 			return {
 				id: item.documentHash,
@@ -251,11 +307,14 @@ export class BlobStore extends Database {
 			const blobResult: BlobResult = this.findBlobStmt.get(
 				documentId,
 			) as BlobResult;
+
 			result = JSON.parse(
 				blobResult.content.toString("utf8"),
 			) as DocumentBlob;
+
 			this.blobs.set(documentId, result);
 		}
+
 		return result;
 	}
 
@@ -299,6 +358,7 @@ export class BlobStore extends Database {
 		) {
 			return undefined;
 		}
+
 		let result = this.findResult(
 			blob.resultSets,
 			blob.hovers,
@@ -309,11 +369,13 @@ export class BlobStore extends Database {
 		if (result !== undefined) {
 			return result;
 		}
+
 		const moniker = this.findMoniker(blob.resultSets, blob.monikers, range);
 
 		if (moniker === undefined) {
 			return undefined;
 		}
+
 		const qResult: BlobResult = this.findHoverStmt.get({
 			version: this.version,
 			scheme: moniker.scheme,
@@ -323,6 +385,7 @@ export class BlobStore extends Database {
 		if (qResult === undefined) {
 			return undefined;
 		}
+
 		result = JSON.parse(qResult.content.toString()) as lsp.Hover;
 
 		if (result.range === undefined) {
@@ -333,6 +396,7 @@ export class BlobStore extends Database {
 				range.end.character,
 			);
 		}
+
 		return result;
 	}
 
@@ -352,6 +416,7 @@ export class BlobStore extends Database {
 		) {
 			return undefined;
 		}
+
 		let resultData = this.findResult(
 			blob.resultSets,
 			blob.declarationResults,
@@ -369,6 +434,7 @@ export class BlobStore extends Database {
 			if (moniker === undefined) {
 				return undefined;
 			}
+
 			return this.findDeclarationsInDB(moniker);
 		} else {
 			return BlobStore.asLocations(blob.ranges, uri, resultData.values);
@@ -387,6 +453,7 @@ export class BlobStore extends Database {
 		if (qResult === undefined || qResult.length === 0) {
 			return undefined;
 		}
+
 		return qResult.map((item) => {
 			return lsp.Location.create(
 				this.fromDatabase(item.uri),
@@ -416,6 +483,7 @@ export class BlobStore extends Database {
 		) {
 			return undefined;
 		}
+
 		let resultData = this.findResult(
 			blob.resultSets,
 			blob.definitionResults,
@@ -433,6 +501,7 @@ export class BlobStore extends Database {
 			if (moniker === undefined) {
 				return undefined;
 			}
+
 			return this.findDefinitionsInDB(moniker);
 		} else {
 			return BlobStore.asLocations(blob.ranges, uri, resultData.values);
@@ -451,6 +520,7 @@ export class BlobStore extends Database {
 		if (qResult === undefined || qResult.length === 0) {
 			return undefined;
 		}
+
 		return qResult.map((item) => {
 			return lsp.Location.create(
 				this.fromDatabase(item.uri),
@@ -481,6 +551,7 @@ export class BlobStore extends Database {
 		) {
 			return undefined;
 		}
+
 		let resultData = this.findResult(
 			blob.resultSets,
 			blob.referenceResults,
@@ -498,6 +569,7 @@ export class BlobStore extends Database {
 			if (moniker === undefined) {
 				return undefined;
 			}
+
 			return this.findReferencesInDB(moniker, context);
 		} else {
 			let result: lsp.Location[] = [];
@@ -514,6 +586,7 @@ export class BlobStore extends Database {
 					),
 				);
 			}
+
 			if (
 				context.includeDeclaration &&
 				resultData.definitions !== undefined
@@ -526,6 +599,7 @@ export class BlobStore extends Database {
 					),
 				);
 			}
+
 			if (resultData.references !== undefined) {
 				result.push(
 					...BlobStore.asLocations(
@@ -535,6 +609,7 @@ export class BlobStore extends Database {
 					),
 				);
 			}
+
 			return result;
 		}
 	}
@@ -552,6 +627,7 @@ export class BlobStore extends Database {
 		if (qResult === undefined || qResult.length === 0) {
 			return undefined;
 		}
+
 		let result: lsp.Location[] = [];
 
 		for (let item of qResult) {
@@ -569,6 +645,7 @@ export class BlobStore extends Database {
 				);
 			}
 		}
+
 		return result;
 	}
 
@@ -586,6 +663,7 @@ export class BlobStore extends Database {
 			if (value !== undefined) {
 				return map[value];
 			}
+
 			current =
 				current.next !== undefined
 					? resultSets !== undefined
@@ -593,6 +671,7 @@ export class BlobStore extends Database {
 						: undefined
 					: undefined;
 		}
+
 		return undefined;
 	}
 
@@ -604,6 +683,7 @@ export class BlobStore extends Database {
 		if (monikers === undefined) {
 			return undefined;
 		}
+
 		let current: RangeData | ResultSetData | undefined = data;
 
 		let result: Id | undefined;
@@ -612,6 +692,7 @@ export class BlobStore extends Database {
 			if (current.moniker !== undefined) {
 				result = current.moniker;
 			}
+
 			current =
 				current.next !== undefined
 					? resultSets !== undefined
@@ -619,6 +700,7 @@ export class BlobStore extends Database {
 						: undefined
 					: undefined;
 		}
+
 		return result !== undefined ? monikers[result] : undefined;
 	}
 
@@ -631,6 +713,7 @@ export class BlobStore extends Database {
 		if (documentId === undefined) {
 			return { range: undefined, blob: undefined };
 		}
+
 		const blob = this.getBlob(documentId.id);
 
 		let candidate: RangeData | undefined;
@@ -648,6 +731,7 @@ export class BlobStore extends Database {
 				}
 			}
 		}
+
 		return { range: candidate, blob };
 	}
 
@@ -681,18 +765,21 @@ export class BlobStore extends Database {
 		) {
 			return false;
 		}
+
 		if (
 			position.line === range.start.line &&
 			position.character < range.start.character
 		) {
 			return false;
 		}
+
 		if (
 			position.line === range.end.line &&
 			position.character > range.end.character
 		) {
 			return false;
 		}
+
 		return true;
 	}
 
@@ -709,24 +796,28 @@ export class BlobStore extends Database {
 		) {
 			return false;
 		}
+
 		if (
 			otherRange.start.line > range.end.line ||
 			otherRange.end.line > range.end.line
 		) {
 			return false;
 		}
+
 		if (
 			otherRange.start.line === range.start.line &&
 			otherRange.start.character < range.start.character
 		) {
 			return false;
 		}
+
 		if (
 			otherRange.end.line === range.end.line &&
 			otherRange.end.character > range.end.character
 		) {
 			return false;
 		}
+
 		return true;
 	}
 }

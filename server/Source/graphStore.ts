@@ -34,8 +34,11 @@ import {
 
 interface DecompressorPropertyDescription {
 	name: string;
+
 	index: number;
+
 	compressionKind: CompressionKind;
+
 	longForm?: Map<string | number, string>;
 }
 
@@ -47,13 +50,18 @@ class Decompressor {
 	}
 
 	private id: number;
+
 	private parentId: number | undefined;
+
 	private parent: Decompressor | undefined;
+
 	private properties: DecompressorPropertyDescription[];
 
 	constructor(description: CompressorDescription) {
 		this.id = description.id;
+
 		this.parentId = description.parent;
+
 		this.properties = [];
 
 		for (let item of description.properties) {
@@ -71,8 +79,10 @@ class Decompressor {
 					propertyDescription.longForm.set(element[1], element[0]);
 				}
 			}
+
 			this.properties.push(propertyDescription);
 		}
+
 		Decompressor.all.set(this.id, this);
 	}
 
@@ -90,6 +100,7 @@ class Decompressor {
 				return item;
 			}
 		}
+
 		return undefined;
 	}
 
@@ -107,6 +118,7 @@ class Decompressor {
 			if (value === null || value === undefined) {
 				continue;
 			}
+
 			let decompressor: Decompressor | undefined;
 
 			switch (property.compressionKind) {
@@ -135,6 +147,7 @@ class Decompressor {
 							convertedScalar = long;
 						}
 					}
+
 					let dotIndex = property.name.indexOf(".");
 
 					if (dotIndex !== -1) {
@@ -145,10 +158,12 @@ class Decompressor {
 						if (result[container] === undefined) {
 							result[container] = Object.create(null);
 						}
+
 						result[container][name] = convertedScalar;
 					} else {
 						result[property.name] = convertedScalar;
 					}
+
 					break;
 
 				case CompressionKind.literal:
@@ -157,7 +172,9 @@ class Decompressor {
 							`Compression kind literal detected on non array value. The property is ${property.name}`,
 						);
 					}
+
 					let convertedLiteral: any;
+
 					decompressor = Decompressor.get(value[0]);
 
 					if (decompressor === undefined) {
@@ -165,7 +182,9 @@ class Decompressor {
 							`No decompression found for property ${property.name} and id ${value[0]}`,
 						);
 					}
+
 					convertedLiteral = decompressor.decompress(value);
+
 					result[property.name] = convertedLiteral;
 
 					break;
@@ -176,6 +195,7 @@ class Decompressor {
 							`Compression kind array detected on non array value. The property is ${property.name}`,
 						);
 					}
+
 					let convertedArray: any[] = [];
 
 					for (let element of value) {
@@ -199,6 +219,7 @@ class Decompressor {
 									`No decompression found for property ${property.name} and id ${element[0]}`,
 								);
 							}
+
 							convertedArray.push(
 								decompressor.decompress(element),
 							);
@@ -208,6 +229,7 @@ class Decompressor {
 							);
 						}
 					}
+
 					result[property.name] = convertedArray;
 
 					break;
@@ -257,11 +279,13 @@ class Decompressor {
 							}
 						}
 					}
+
 					if (convertedAny === undefined) {
 						throw new Error(
 							`Comression kind any can't be handled for property ${property.name}. Value is ${JSON.stringify(value)}`,
 						);
 					}
+
 					result[property.name] = convertedAny;
 
 					break;
@@ -272,21 +296,28 @@ class Decompressor {
 					);
 			}
 		}
+
 		return result;
 	}
 }
 
 interface RangeResult {
 	id: number;
+
 	belongsTo: number;
+
 	startLine: number;
+
 	startCharacter: number;
+
 	endLine: number;
+
 	endCharacter: number;
 }
 
 interface MetaDataResult {
 	id: number;
+
 	value: string;
 }
 
@@ -296,9 +327,13 @@ interface IdResult {
 
 interface LocationResult extends IdResult {
 	uri: string;
+
 	startLine: number;
+
 	startCharacter: number;
+
 	endLine: number;
+
 	endCharacter: number;
 }
 
@@ -308,11 +343,13 @@ interface LocationResultWithProperty extends LocationResult {
 
 interface DocumentResult extends IdResult {
 	label: number;
+
 	value: string;
 }
 
 interface VertexResult extends IdResult {
 	label: number;
+
 	value: string;
 }
 
@@ -330,6 +367,7 @@ interface PreviousResult {
 
 interface DocumentInfoResult extends IdResult {
 	projectId: Id;
+
 	uri: string;
 
 	documentHash: string;
@@ -371,18 +409,24 @@ abstract class Retriever<T extends IdResult> {
 
 		for (let i = 0; i < this.values.length; i++) {
 			let value = this.values[i];
+
 			batch.push(value);
+
 			mapping.set(value, i);
 
 			if (batch.length === this.batchSize) {
 				this.retrieveBatch(result, batch, mapping);
+
 				batch = [];
+
 				mapping.clear();
 			}
 		}
+
 		if (batch.length > 0) {
 			this.retrieveBatch(result, batch, mapping);
 		}
+
 		this.values = [];
 
 		return result;
@@ -405,6 +449,7 @@ abstract class Retriever<T extends IdResult> {
 				`Couldn't retrieve all data for retriever ${this.name}`,
 			);
 		}
+
 		for (let element of data) {
 			result[mapping.get(element.id)!] = element;
 		}
@@ -439,8 +484,10 @@ class VertexRetriever extends Retriever<VertexResult> {
 
 		if (!result) {
 			result = this.prepare(VertexRetriever.statement, size);
+
 			VertexRetriever.preparedStatements.set(size, result);
 		}
+
 		return result;
 	}
 
@@ -468,8 +515,10 @@ class LocationRetriever extends Retriever<LocationResult> {
 
 		if (!result) {
 			result = this.prepare(LocationRetriever.statement, size);
+
 			LocationRetriever.preparedStatements.set(size, result);
 		}
+
 		return result;
 	}
 
@@ -482,26 +531,45 @@ export class GraphStore extends Database {
 	private db!: Sqlite.Database;
 
 	private allDocumentsStmt!: Sqlite.Statement;
+
 	private getDocumentContentStmt!: Sqlite.Statement;
+
 	private findRangeStmt!: Sqlite.Statement;
+
 	private findDocumentStmt!: Sqlite.Statement;
+
 	private findResultStmt!: Sqlite.Statement;
+
 	private findMonikerStmt!: Sqlite.Statement;
+
 	private findMatchingMonikersStmt!: Sqlite.Statement;
+
 	private findAttachedMonikersStmt!: Sqlite.Statement;
+
 	private findNextMonikerStmt!: Sqlite.Statement;
+
 	private findVertexIdForMonikerStmt!: Sqlite.Statement;
+
 	private findNextVertexStmt!: Sqlite.Statement;
+
 	private findPreviousVertexStmt!: Sqlite.Statement;
+
 	private findResultForDocumentStmt!: Sqlite.Statement;
+
 	private findRangeFromReferenceResult!: Sqlite.Statement;
+
 	private findResultFromReferenceResult!: Sqlite.Statement;
+
 	private findCascadesFromReferenceResult!: Sqlite.Statement;
+
 	private findRangeFromResult!: Sqlite.Statement;
 
 	private workspaceRoot!: URI;
+
 	private vertexLabels: Map<string, number> | undefined;
+
 	private edgeLabels: Map<string, number> | undefined;
+
 	private itemEdgeProperties: Map<string, number> | undefined;
 
 	public constructor() {
@@ -513,14 +581,19 @@ export class GraphStore extends Database {
 		transformerFactory: (workspaceRoot: string) => UriTransformer,
 	): Promise<void> {
 		this.db = new Sqlite(file, { readonly: true });
+
 		this.readMetaData();
+
 		this.readSource();
+
 		this.allDocumentsStmt = this.db.prepare(
 			"Select id, uri, documentHash From documents",
 		);
+
 		this.getDocumentContentStmt = this.db.prepare(
 			"Select content From contents Where documentHash = ?",
 		);
+
 		this.findDocumentStmt = this.db.prepare(
 			"Select id From documents Where uri = ?",
 		);
@@ -569,6 +642,7 @@ export class GraphStore extends Database {
 				`Where e.outV = $source and e.label = ${monikerEdgeLabel}`,
 			].join(" "),
 		);
+
 		this.findMatchingMonikersStmt = this.db.prepare(
 			[
 				"Select v.id, v.label, v.value From vertices v",
@@ -576,6 +650,7 @@ export class GraphStore extends Database {
 				"Where m.identifier = $identifier and m.scheme = $scheme and m.id != $exclude",
 			].join(" "),
 		);
+
 		this.findAttachedMonikersStmt = this.db.prepare(
 			[
 				"Select v.id, v.label, v.value from vertices v",
@@ -583,12 +658,14 @@ export class GraphStore extends Database {
 				`Where e.inV = $source and e.label = ${monikerAttachLabel}`,
 			].join(" "),
 		);
+
 		this.findNextMonikerStmt = this.db.prepare(
 			[
 				"Select e.inV From edges e",
 				`Where e.outV = $source and e.label = ${monikerAttachLabel}`,
 			].join(" "),
 		);
+
 		this.findVertexIdForMonikerStmt = this.db.prepare(
 			[
 				"Select v.id from vertices v",
@@ -603,6 +680,7 @@ export class GraphStore extends Database {
 				`Where e.outV = $source and e.label = ${nextLabel}`,
 			].join(" "),
 		);
+
 		this.findPreviousVertexStmt = this.db.prepare(
 			[
 				"Select e.outV From edges e",
@@ -627,6 +705,7 @@ export class GraphStore extends Database {
 				"Where i.outV = $id",
 			].join(" "),
 		);
+
 		this.findRangeFromReferenceResult = this.db.prepare(
 			[
 				"Select r.id, r.startLine, r.startCharacter, r.endLine, r.endCharacter, i.property, d.uri from ranges r",
@@ -635,6 +714,7 @@ export class GraphStore extends Database {
 				"Where i.outV = $id and (i.property in (1, 2, 3))",
 			].join(" "),
 		);
+
 		this.findResultFromReferenceResult = this.db.prepare(
 			[
 				"Select v.id, v.label, v.value from vertices v",
@@ -642,6 +722,7 @@ export class GraphStore extends Database {
 				"Where i.outV = $id and i.property = 4",
 			].join(" "),
 		);
+
 		this.findCascadesFromReferenceResult = this.db.prepare(
 			[
 				"Select v.id, v.label, v.value from vertices v",
@@ -649,6 +730,7 @@ export class GraphStore extends Database {
 				"Where i.outV = $id and i.property = 5",
 			].join(" "),
 		);
+
 		this.initialize(transformerFactory);
 
 		return Promise.resolve();
@@ -662,16 +744,20 @@ export class GraphStore extends Database {
 		if (result === undefined || result.length !== 1) {
 			throw new Error("Failed to read meta data record.");
 		}
+
 		let metaData: MetaData = JSON.parse(result[0].value);
 
 		if (metaData.compressors !== undefined) {
 			this.vertexLabels = new Map();
+
 			this.edgeLabels = new Map();
+
 			this.itemEdgeProperties = new Map();
 
 			for (let decription of metaData.compressors.all) {
 				new Decompressor(decription);
 			}
+
 			for (let element of Decompressor.all.values()) {
 				element.link();
 			}
@@ -683,6 +769,7 @@ export class GraphStore extends Database {
 			if (decompressor === undefined) {
 				throw new Error("No vertex decompressor found.");
 			}
+
 			let description = decompressor.getPropertyDescription("label");
 
 			if (
@@ -691,6 +778,7 @@ export class GraphStore extends Database {
 			) {
 				throw new Error("No vertex label property description found.");
 			}
+
 			for (let item of description.longForm) {
 				this.vertexLabels.set(item[1], item[0] as number);
 			}
@@ -702,6 +790,7 @@ export class GraphStore extends Database {
 			if (decompressor === undefined) {
 				throw new Error("No edge decompressor found.");
 			}
+
 			description = decompressor.getPropertyDescription("label");
 
 			if (
@@ -710,6 +799,7 @@ export class GraphStore extends Database {
 			) {
 				throw new Error("No edge label property description found.");
 			}
+
 			for (let item of description.longForm) {
 				this.edgeLabels.set(item[1], item[0] as number);
 			}
@@ -721,6 +811,7 @@ export class GraphStore extends Database {
 			if (decompressor === undefined) {
 				throw new Error("No item edge decompressor found.");
 			}
+
 			description = decompressor.getPropertyDescription("property");
 
 			if (
@@ -729,6 +820,7 @@ export class GraphStore extends Database {
 			) {
 				throw new Error("No item property description found.");
 			}
+
 			for (let item of description.longForm) {
 				this.itemEdgeProperties.set(item[1], item[0] as number);
 			}
@@ -773,6 +865,7 @@ export class GraphStore extends Database {
 		if (result === undefined) {
 			return [];
 		}
+
 		return result.map((item) => {
 			return { id: item.id, uri: item.uri, hash: item.documentHash };
 		});
@@ -794,6 +887,7 @@ export class GraphStore extends Database {
 		if (!result || !result.content) {
 			return "";
 		}
+
 		return Buffer.from(result.content).toString("base64");
 	}
 
@@ -806,6 +900,7 @@ export class GraphStore extends Database {
 		if (foldingResult === undefined) {
 			return undefined;
 		}
+
 		return foldingResult.result;
 	}
 
@@ -818,9 +913,11 @@ export class GraphStore extends Database {
 		if (symbolResult === undefined) {
 			return undefined;
 		}
+
 		if (symbolResult.result.length === 0) {
 			return [];
 		}
+
 		if (lsp.DocumentSymbol.is(symbolResult.result[0])) {
 			return symbolResult.result as lsp.DocumentSymbol[];
 		} else {
@@ -854,6 +951,7 @@ export class GraphStore extends Database {
 								element.children.length > 0
 							) {
 								symbol.children = [];
+
 								convert(
 									symbol.children,
 									element.children,
@@ -879,7 +977,9 @@ export class GraphStore extends Database {
 					ranges.set(range.id, range);
 				}
 			}
+
 			let result: lsp.DocumentSymbol[] = [];
+
 			convert(
 				result,
 				symbolResult.result as RangeBasedDocumentSymbol[],
@@ -906,6 +1006,7 @@ export class GraphStore extends Database {
 			if (hoverResult === undefined || hoverResult.result === undefined) {
 				return undefined;
 			}
+
 			const result: lsp.Hover = Object.assign(
 				Object.create(null),
 				hoverResult.result,
@@ -923,6 +1024,7 @@ export class GraphStore extends Database {
 					},
 				};
 			}
+
 			return result;
 		};
 
@@ -935,6 +1037,7 @@ export class GraphStore extends Database {
 				break;
 			}
 		}
+
 		if (result === undefined) {
 			return undefined;
 		}
@@ -956,6 +1059,7 @@ export class GraphStore extends Database {
 				}
 			}
 		}
+
 		return result;
 	}
 
@@ -992,6 +1096,7 @@ export class GraphStore extends Database {
 					result.push(this.createLocation(item));
 				}
 			}
+
 			return result;
 		};
 
@@ -1002,6 +1107,7 @@ export class GraphStore extends Database {
 				return result;
 			}
 		}
+
 		return undefined;
 	}
 
@@ -1038,6 +1144,7 @@ export class GraphStore extends Database {
 					result.push(this.createLocation(item));
 				}
 			}
+
 			return result;
 		};
 
@@ -1048,6 +1155,7 @@ export class GraphStore extends Database {
 				return result;
 			}
 		}
+
 		return undefined;
 	}
 
@@ -1090,12 +1198,14 @@ export class GraphStore extends Database {
 				referenceResult,
 				context,
 			);
+
 			this.findMonikersForVertex(monikers, anchorId);
 
 			for (const moniker of monikers.values()) {
 				if (moniker.kind === MonikerKind.local) {
 					continue;
 				}
+
 				const matchingMonikers = this.findMatchingMonikers(moniker);
 
 				for (const matchingMoniker of matchingMonikers) {
@@ -1105,6 +1215,7 @@ export class GraphStore extends Database {
 					if (vertexId === undefined) {
 						continue;
 					}
+
 					const [referenceResult] = this.getResultForId(
 						vertexId,
 						EdgeLabels.textDocument_references,
@@ -1113,6 +1224,7 @@ export class GraphStore extends Database {
 					if (referenceResult === undefined) {
 						continue;
 					}
+
 					this.resolveReferenceResult(
 						result,
 						dedupRanges,
@@ -1154,6 +1266,7 @@ export class GraphStore extends Database {
 					(context.includeDeclaration && !dedupRanges.has(item.id))
 				) {
 					dedupRanges.add(item.id);
+
 					result.push(this.createLocation(item));
 				}
 			}
@@ -1204,6 +1317,7 @@ export class GraphStore extends Database {
 			if (moniker !== undefined) {
 				break;
 			}
+
 			const previous: PreviousResult = this.findPreviousVertexStmt.get({
 				source: currentId,
 			}) as PreviousResult;
@@ -1213,12 +1327,14 @@ export class GraphStore extends Database {
 
 				break;
 			}
+
 			currentId = previous.outV;
 		} while (currentId !== undefined);
 
 		if (moniker === undefined) {
 			return;
 		}
+
 		const result: Moniker[] = [this.decompress(JSON.parse(moniker.value))];
 
 		for (const moniker of result) {
@@ -1233,6 +1349,7 @@ export class GraphStore extends Database {
 				const attachedMoniker: Moniker = this.decompress(
 					JSON.parse(attachedMonikerResult.value),
 				);
+
 				monikers.set(attachedMoniker.id, attachedMoniker);
 			}
 		}
@@ -1261,12 +1378,14 @@ export class GraphStore extends Database {
 			if (next === undefined) {
 				break;
 			}
+
 			currentId = next.inV;
 		} while (currentId !== undefined);
 
 		if (currentId === undefined) {
 			return;
 		}
+
 		const result: IdResult = this.findVertexIdForMonikerStmt.get({
 			id: currentId,
 		}) as IdResult;
@@ -1287,6 +1406,7 @@ export class GraphStore extends Database {
 		if (dbResult === undefined || dbResult.length === 0) {
 			return undefined;
 		}
+
 		function sameRange(a: RangeResult, b: RangeResult): boolean {
 			return (
 				a.startLine === b.startLine &&
@@ -1301,7 +1421,9 @@ export class GraphStore extends Database {
 		const last = dbResult[dbResult.length - 1];
 
 		const belongsTo: Set<Id> = new Set();
+
 		result.push(last);
+
 		belongsTo.add(last.belongsTo);
 
 		for (let i = result.length - 2; i >= 0; i--) {
@@ -1316,6 +1438,7 @@ export class GraphStore extends Database {
 				break;
 			}
 		}
+
 		return result;
 	}
 
@@ -1323,18 +1446,22 @@ export class GraphStore extends Database {
 		id: Id,
 		label: EdgeLabels.textDocument_hover,
 	): [HoverResult | undefined, Id];
+
 	private getResultForId(
 		id: Id,
 		label: EdgeLabels.textDocument_declaration,
 	): [DeclarationResult | undefined, Id];
+
 	private getResultForId(
 		id: Id,
 		label: EdgeLabels.textDocument_definition,
 	): [DefinitionResult | undefined, Id];
+
 	private getResultForId(
 		id: Id,
 		label: EdgeLabels.textDocument_references,
 	): [ReferenceResult | undefined, Id];
+
 	private getResultForId(id: Id, label: EdgeLabels): [any | undefined, Id] {
 		let currentId = id;
 
@@ -1349,6 +1476,7 @@ export class GraphStore extends Database {
 			if (result !== undefined) {
 				break;
 			}
+
 			const next: NextResult = this.findNextVertexStmt.get({
 				source: currentId,
 			}) as NextResult;
@@ -1358,12 +1486,14 @@ export class GraphStore extends Database {
 
 				break;
 			}
+
 			currentId = next.inV;
 		} while (currentId !== undefined);
 
 		if (result === undefined) {
 			return [undefined, currentId];
 		}
+
 		return [this.decompress(JSON.parse(result.value)), currentId];
 	}
 
@@ -1371,6 +1501,7 @@ export class GraphStore extends Database {
 		if (this.edgeLabels === undefined) {
 			return label;
 		}
+
 		let result = this.edgeLabels.get(label);
 
 		return result !== undefined ? result : label;
@@ -1382,6 +1513,7 @@ export class GraphStore extends Database {
 		if (this.itemEdgeProperties === undefined) {
 			return prop;
 		}
+
 		let result = this.itemEdgeProperties.get(prop);
 
 		return result !== undefined ? result : prop;
@@ -1401,11 +1533,14 @@ export class GraphStore extends Database {
 				result[i] = element;
 			} else {
 				mapping.set(element, i);
+
 				ids.push(element);
 			}
 		}
+
 		if (ids.length > 0) {
 			const locationRetriever = new LocationRetriever(this.db);
+
 			locationRetriever.addMany(ids);
 
 			let data: LocationResult[] = locationRetriever.run();
@@ -1414,6 +1549,7 @@ export class GraphStore extends Database {
 				result[mapping.get(element.id)!] = this.createLocation(element);
 			}
 		}
+
 		return result;
 	}
 
@@ -1422,6 +1558,7 @@ export class GraphStore extends Database {
 			return { range: value.range, uri: this.fromDatabase(value.uri) };
 		} else {
 			const locationRetriever = new LocationRetriever(this.db, 1);
+
 			locationRetriever.add(value);
 
 			let data: LocationResult = locationRetriever.run()[0];
@@ -1446,10 +1583,12 @@ export class GraphStore extends Database {
 		uri: string,
 		label: EdgeLabels.textDocument_documentSymbol,
 	): DocumentSymbolResult | undefined;
+
 	private getResultForDocument(
 		uri: string,
 		label: EdgeLabels.textDocument_foldingRange,
 	): FoldingRangeResult | undefined;
+
 	private getResultForDocument(
 		uri: string,
 		label: EdgeLabels,
@@ -1462,6 +1601,7 @@ export class GraphStore extends Database {
 		if (data === undefined) {
 			return undefined;
 		}
+
 		return this.decompress(JSON.parse(data.value));
 	}
 
@@ -1473,6 +1613,7 @@ export class GraphStore extends Database {
 				return decompressor.decompress(value);
 			}
 		}
+
 		return value;
 	}
 }

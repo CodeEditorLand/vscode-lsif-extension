@@ -40,8 +40,11 @@ export interface CompressorPropertyDescription {
 
 export interface CompressorData {
 	vertexCompressor: number;
+
 	edgeCompressor: number;
+
 	itemEdgeCompressor: number;
+
 	all: CompressorDescription[];
 }
 

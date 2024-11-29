@@ -23,8 +23,11 @@ export type FileType = 0 | 1 | 2 | 64;
 
 export interface FileStat {
 	type: FileType;
+
 	ctime: number;
+
 	mtime: number;
+
 	size: number;
 }
 
@@ -36,14 +39,19 @@ export namespace FileStat {
 
 export interface DocumentInfo {
 	id: Id;
+
 	uri: string;
+
 	hash: string;
 }
 
 interface File extends FileStat {
 	type: 1;
+
 	name: string;
+
 	id: Id;
+
 	hash: string;
 }
 
@@ -63,7 +71,9 @@ namespace File {
 
 interface Directory extends FileStat {
 	type: 2;
+
 	name: string;
+
 	children: Map<string, Entry>;
 }
 
@@ -84,11 +94,14 @@ export type Entry = File | Directory;
 
 export class FileSystem {
 	private workspaceRoot: string;
+
 	private workspaceRootWithSlash: string;
+
 	private filesOutsideWorkspaceRoot: Map<
 		string,
 		{ id: Id; hash: string | undefined }
 	>;
+
 	private root: Directory;
 
 	constructor(workspaceRoot: string, documents: DocumentInfo[]) {
@@ -97,12 +110,16 @@ export class FileSystem {
 				0,
 				workspaceRoot.length - 1,
 			);
+
 			this.workspaceRootWithSlash = workspaceRoot;
 		} else {
 			this.workspaceRoot = workspaceRoot;
+
 			this.workspaceRootWithSlash = workspaceRoot + "/";
 		}
+
 		this.root = Directory.create("");
+
 		this.filesOutsideWorkspaceRoot = new Map();
 
 		for (let info of documents) {
@@ -112,6 +129,7 @@ export class FileSystem {
 
 				continue;
 			}
+
 			let p = info.uri.substring(workspaceRoot.length);
 
 			let dirname = path.posix.dirname(p);
@@ -133,11 +151,13 @@ export class FileSystem {
 		if (this.filesOutsideWorkspaceRoot.has(uri)) {
 			return { type: FileType.File, ctime, mtime, size: 0 };
 		}
+
 		let isRoot = this.workspaceRoot === uri;
 
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return null;
 		}
+
 		let p = isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length);
 
 		let entry = this.lookup(p, false);
@@ -151,6 +171,7 @@ export class FileSystem {
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return [];
 		}
+
 		let p = isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length);
 
 		let entry = this.lookup(p, false);
@@ -158,11 +179,13 @@ export class FileSystem {
 		if (entry === undefined || entry.type !== FileType.Directory) {
 			return [];
 		}
+
 		let result: [string, FileType][] = [];
 
 		for (let child of entry.children.values()) {
 			result.push([child.name, child.type]);
 		}
+
 		return result;
 	}
 
@@ -174,11 +197,13 @@ export class FileSystem {
 		if (result !== undefined) {
 			return result;
 		}
+
 		let isRoot = this.workspaceRoot === uri;
 
 		if (!uri.startsWith(this.workspaceRootWithSlash) && !isRoot) {
 			return undefined;
 		}
+
 		let entry = this.lookup(
 			isRoot ? "" : uri.substring(this.workspaceRootWithSlash.length),
 		);
@@ -195,6 +220,7 @@ export class FileSystem {
 			if (!part || part === ".") {
 				continue;
 			}
+
 			let child: Entry | undefined;
 
 			if (entry.type === FileType.Directory) {
@@ -202,14 +228,18 @@ export class FileSystem {
 
 				if (child === undefined && create) {
 					child = Directory.create(part);
+
 					entry.children.set(part, child);
 				}
 			}
+
 			if (!child) {
 				return undefined;
 			}
+
 			entry = child;
 		}
+
 		return entry;
 	}
 }
